@@ -9,7 +9,7 @@ const char* version_banner()
 
 const char* milestone_name()
 {
-    return "0.0.1 - skeleton, build system, three targets";
+    return "0.0.2 - Vec3 and the first real tests";
 }
 
 }  // namespace orbitalis

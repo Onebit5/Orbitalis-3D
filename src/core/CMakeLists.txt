@@ -13,6 +13,7 @@ configure_file(
 
 add_library(orbitalis-core STATIC
     src/Version.cpp
+    include/orbitalis/math/Vec3.hpp
     "${CMAKE_CURRENT_BINARY_DIR}/generated/orbitalis/core/Version.hpp"
 )
 add_library(orbitalis::core ALIAS orbitalis-core)

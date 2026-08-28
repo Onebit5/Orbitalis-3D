@@ -1,15 +1,52 @@
 # ------------------------------------------------------------------------------
 # tests.
 #
-# no doctest yet -- that lands at 0.0.2 together with Vec3, which is the first
-# thing actually worth asserting on. for now this is a hand-rolled smoke test whose
-# only job is to prove the ctest plumbing works, so that 0.0.2 is pure Vec3 work
-# and not a fight with CMake.
+# doctest arrives here at 0.0.2, replacing the hand-rolled smoke test from 0.0.1.
+# it is a single header, compiles fast, and pulls in nothing else, which is the whole
+# reason it won over Catch2 and GoogleTest. the hand-written physics stays hand-written
+# (that is the project); the test harness is a chore and I am not writing one.
 # ------------------------------------------------------------------------------
-add_executable(orbitalis-smoketest smoke_test.cpp)
+include(FetchContent)
 
-target_link_libraries(orbitalis-smoketest PRIVATE orbitalis::core orbitalis::warnings)
+# doctest builds its own test suite and install rules by default when it is the top
+# level project. it is not, but set these explicitly so a future doctest version cannot
+# surprise me with several hundred extra targets.
+set(DOCTEST_WITH_TESTS            OFF CACHE BOOL "" FORCE)
+set(DOCTEST_WITH_MAIN_IN_STATIC_LIB OFF CACHE BOOL "" FORCE)
+set(DOCTEST_NO_INSTALL            ON  CACHE BOOL "" FORCE)
 
-set_target_properties(orbitalis-smoketest PROPERTIES FOLDER "orbitalis/tests")
+FetchContent_Declare(
+    doctest
+    GIT_REPOSITORY https://github.com/doctest/doctest.git
+    GIT_TAG        v2.5.3      # pinned. a floating tag would make my builds depend on
+                               # what upstream did this morning.
+    GIT_SHALLOW    TRUE
+)
 
-add_test(NAME smoke COMMAND orbitalis-smoketest)
+FetchContent_MakeAvailable(doctest)
+
+add_executable(orbitalis-tests
+    test_main.cpp
+    test_version.cpp
+    math/test_vec3.cpp
+)
+
+target_link_libraries(orbitalis-tests PRIVATE
+    orbitalis::core
+    orbitalis::warnings
+    doctest::doctest
+)
+
+# doctest's headers are not mine, so I do not want /W4 findings from them mixed in with
+# findings about my own code. SYSTEM suppresses warnings originating inside them.
+get_target_property(doctest_includes doctest::doctest INTERFACE_INCLUDE_DIRECTORIES)
+if(doctest_includes)
+    target_include_directories(orbitalis-tests SYSTEM PRIVATE ${doctest_includes})
+endif()
+
+set_target_properties(orbitalis-tests PROPERTIES FOLDER "orbitalis/tests")
+
+# registers each TEST_CASE as its own ctest entry, so a failure names the case rather
+# than just saying "the test executable returned 1".
+include("${doctest_SOURCE_DIR}/scripts/cmake/doctest.cmake")
+doctest_discover_tests(orbitalis-tests)

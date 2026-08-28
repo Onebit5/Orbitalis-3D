@@ -4,7 +4,7 @@ a 3D n-body simulator in C++ that computes gravitational trajectories for planet
 systems by numerically solving the equations of motion. newtonian physics, `double`
 precision, written from scratch.
 
-**current version: 0.0.1** — the build skeleton. see [status](#status) for exactly what
+**current version: 0.0.2** — Vec3 and the test suite. see [status](#status) for exactly what
 does and doesn't exist yet.
 
 ---
@@ -16,16 +16,17 @@ this is early. what works today:
 | | |
 |---|---|
 | build system | [x] CMake, three targets, Debug + Release, zero warnings |
-| tests | [x] ctest wired, 1 smoke test |
-| vector maths | [ ] next (0.0.2) |
+| tests | [x] doctest, 17 cases |
+| vector maths | [x] Vec3, header-only |
+| bodies | [ ] next (0.0.3) |
 | gravity | [ ] 0.0.4 |
 | integrators | [ ] 0.3.0 |
 | 3D viewer | [ ] 0.2.0 |
 | Barnes-Hut | [ ] 0.4.0 |
 | binary export | [ ] 0.5.0 |
 
-right now `orbitalis-cli` and `orbitalis-viewer` print their version and exit. there is no
-physics in the repo yet. the full plan is in [ROADMAP.md](ROADMAP.md).
+`Vec3` exists and is tested. `orbitalis-cli` and `orbitalis-viewer` still just print their
+version and exit; there is no gravity yet. the full plan is in [ROADMAP.md](ROADMAP.md).
 
 ## how it's put together
 

@@ -1,6 +1,6 @@
 # roadmap
 
-**where I am: 0.0.1 done.** next up is 0.0.2 (Vec3).
+**where I am: 0.0.2 done.** next up is 0.0.3 (Body and System).
 
 a milestone is **done** when the thing it promises actually works and I wrote down how I
 proved it. not when the code compiles.
@@ -25,7 +25,7 @@ the boring foundation. no optimisation, no cleverness, just correct newtonian gr
 
 - [x] **0.0.1** — repo, folder layout, root CMakeLists with three targets, C++20, warnings
   on, builds a hello world
-- [ ] **0.0.2** — `Vec3`: operators, dot, cross, length, length_squared, normalized.
+- [x] **0.0.2** — `Vec3`: operators, dot, cross, length, length_squared, normalized.
   header-only, constexpr where possible. doctest arrives here, first real tests
 - [ ] **0.0.3** — `Body` (mass, radius, position, velocity, acceleration, id, name) and a
   `System` that owns `std::vector<Body>`

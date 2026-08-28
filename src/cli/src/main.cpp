@@ -9,6 +9,6 @@ int main()
     std::printf("%s\n", orbitalis::version_banner());
     std::printf("  milestone : %s\n", orbitalis::milestone_name());
     std::printf("  target    : orbitalis-cli (headless)\n");
-    std::printf("  next      : 0.0.2 -- Vec3 and the first real tests\n");
+    std::printf("  next      : 0.0.3 -- Body and System\n");
     return 0;
 }
