@@ -1,0 +1,2 @@
+# git does not track empty directories, and this one needs to survive a clone.
+# python readers for exported trajectories arrive at milestone 0.5.0 (step 0.4.4).

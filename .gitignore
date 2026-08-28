@@ -1,0 +1,55 @@
+# ---- build output ----
+build/
+out/
+/bin/
+/lib/
+install/
+
+# ---- CMake ----
+CMakeCache.txt
+CMakeFiles/
+CMakeUserPresets.json
+cmake_install.cmake
+CTestTestfile.cmake
+Testing/
+compile_commands.json
+_deps/
+
+# ---- Visual Studio / MSVC ----
+.vs/
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+*.suo
+*.user
+*.aps
+*.pdb
+*.ilk
+*.idb
+*.obj
+*.exe
+*.lib
+*.dll
+*.exp
+*.tlog
+
+# ---- editors ----
+.vscode/
+.idea/
+*.swp
+
+# ---- simulation output ----
+# .orb trajectory dumps get big fast (milestone 0.5.0). they are reproducible from a
+# scenario file + a seed, so they never belong in git.
+*.orb
+*.vtk
+*.vtu
+*.xdmf
+runs/
+
+# ---- python tooling (milestone 0.5.0, tools/read_orb.py) ----
+__pycache__/
+*.pyc
+.venv/
+venv/

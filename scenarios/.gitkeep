@@ -1,0 +1,2 @@
+# git does not track empty directories, and this one needs to survive a clone.
+# scenario files arrive at milestone 0.6.0 (step 0.5.3).

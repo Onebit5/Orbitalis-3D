@@ -1,0 +1,34 @@
+#pragma once
+
+// ---------------------------------------------------------------------------
+// GENERATED FILE -- do not edit.
+// CMake expands this from Version.hpp.in at configure time.
+//
+// the version lives in exactly one place: the project() call in the root
+// CMakeLists.txt. this whole project is organised around version numbers
+// (see ROADMAP.md) so having two copies drift apart would be genuinely annoying.
+// ---------------------------------------------------------------------------
+
+// a macro as well as a constant, purely so string-literal concatenation works
+// ("Orbitalis-3D " ORBITALIS_VERSION_STRING). you cannot concatenate a
+// constexpr const char* with a literal -- that is a compile-time text operation
+// and only the preprocessor can do it.
+#define ORBITALIS_VERSION_STRING "@PROJECT_VERSION@"
+
+namespace orbitalis {
+
+inline constexpr int kVersionMajor = @PROJECT_VERSION_MAJOR@;
+inline constexpr int kVersionMinor = @PROJECT_VERSION_MINOR@;
+inline constexpr int kVersionPatch = @PROJECT_VERSION_PATCH@;
+
+inline constexpr const char* kVersionString = ORBITALIS_VERSION_STRING;
+
+/// Human-readable one-liner, e.g. "Orbitalis-3D 0.0.1". Defined in Version.cpp so
+/// that orbitalis-core is a real compiled library and not just headers -- I want
+/// link errors to show up now, while there is nothing to debug.
+const char* version_banner();
+
+/// Which roadmap milestone this build corresponds to.
+const char* milestone_name();
+
+}  // namespace orbitalis

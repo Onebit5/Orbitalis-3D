@@ -1,0 +1,7 @@
+# normalise line endings. I'm on Windows but everything here should stay LF in the
+# repo so diffs don't turn into whole-file rewrites if this ever touches another OS.
+* text=auto eol=lf
+
+# binary trajectory dumps must never be line-ending "fixed" -- that would silently
+# corrupt the doubles. belt and braces, since .gitignore already excludes them.
+*.orb binary
