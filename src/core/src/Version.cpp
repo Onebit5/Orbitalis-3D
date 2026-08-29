@@ -9,7 +9,7 @@ const char* version_banner()
 
 const char* milestone_name()
 {
-    return "0.0.2 - Vec3 and the first real tests";
+    return "0.0.3 - Body and System";
 }
 
 }  // namespace orbitalis

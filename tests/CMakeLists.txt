@@ -29,6 +29,8 @@ add_executable(orbitalis-tests
     test_main.cpp
     test_version.cpp
     math/test_vec3.cpp
+    physics/test_body.cpp
+    physics/test_system.cpp
 )
 
 target_link_libraries(orbitalis-tests PRIVATE
@@ -36,6 +38,14 @@ target_link_libraries(orbitalis-tests PRIVATE
     orbitalis::warnings
     doctest::doctest
 )
+
+# doctest forward-declares std::basic_ostream rather than including <ostream>, to keep its
+# own compile times down. that breaks the moment something needs the complete type: MSVC's
+# string_view header declares an operator<< for string_view, so simply writing
+# CHECK(system.name(id) == "Sun") fails to compile with a wall of errors pointing into
+# __msvc_string_view.hpp rather than at my code. this tells doctest to include the real
+# standard headers instead.
+target_compile_definitions(orbitalis-tests PRIVATE DOCTEST_CONFIG_USE_STD_HEADERS)
 
 # doctest's headers are not mine, so I do not want /W4 findings from them mixed in with
 # findings about my own code. SYSTEM suppresses warnings originating inside them.

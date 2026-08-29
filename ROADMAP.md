@@ -1,6 +1,6 @@
 # roadmap
 
-**where I am: 0.0.2 done.** next up is 0.0.3 (Body and System).
+**where I am: 0.0.3 done.** next up is 0.0.4 (newtonian gravity, brute force).
 
 a milestone is **done** when the thing it promises actually works and I wrote down how I
 proved it. not when the code compiles.
@@ -27,7 +27,7 @@ the boring foundation. no optimisation, no cleverness, just correct newtonian gr
   on, builds a hello world
 - [x] **0.0.2** — `Vec3`: operators, dot, cross, length, length_squared, normalized.
   header-only, constexpr where possible. doctest arrives here, first real tests
-- [ ] **0.0.3** — `Body` (mass, radius, position, velocity, acceleration, id, name) and a
+- [x] **0.0.3** — `Body` (mass, radius, position, velocity, acceleration, id, name) and a
   `System` that owns `std::vector<Body>`
 - [ ] **0.0.4** — `BruteForceSolver`: pairwise newtonian gravity, O(n²), using newton's
   third law so each pair is computed once. plummer softening `r/(r²+ε²)^(3/2)` so nothing
