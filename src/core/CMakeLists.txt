@@ -14,9 +14,13 @@ configure_file(
 add_library(orbitalis-core STATIC
     src/Version.cpp
     src/System.cpp
+    src/BruteForceSolver.cpp
     include/orbitalis/math/Vec3.hpp
     include/orbitalis/physics/Body.hpp
     include/orbitalis/physics/System.hpp
+    include/orbitalis/physics/Constants.hpp
+    include/orbitalis/physics/ForceSolver.hpp
+    include/orbitalis/physics/BruteForceSolver.hpp
     "${CMAKE_CURRENT_BINARY_DIR}/generated/orbitalis/core/Version.hpp"
 )
 add_library(orbitalis::core ALIAS orbitalis-core)

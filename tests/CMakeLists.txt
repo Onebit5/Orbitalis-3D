@@ -31,6 +31,7 @@ add_executable(orbitalis-tests
     math/test_vec3.cpp
     physics/test_body.cpp
     physics/test_system.cpp
+    physics/test_brute_force_solver.cpp
 )
 
 target_link_libraries(orbitalis-tests PRIVATE

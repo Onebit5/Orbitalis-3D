@@ -9,6 +9,6 @@ int main()
     std::printf("%s\n", orbitalis::version_banner());
     std::printf("  milestone : %s\n", orbitalis::milestone_name());
     std::printf("  target    : orbitalis-cli (headless)\n");
-    std::printf("  next      : 0.0.4 -- newtonian gravity, brute force\n");
+    std::printf("  next      : 0.0.5 -- the Euler integrator\n");
     return 0;
 }

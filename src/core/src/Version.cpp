@@ -9,7 +9,7 @@ const char* version_banner()
 
 const char* milestone_name()
 {
-    return "0.0.3 - Body and System";
+    return "0.0.4 - newtonian gravity, brute force";
 }
 
 }  // namespace orbitalis

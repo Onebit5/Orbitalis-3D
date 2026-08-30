@@ -4,7 +4,7 @@ a 3D n-body simulator in C++ that computes gravitational trajectories for planet
 systems by numerically solving the equations of motion. newtonian physics, `double`
 precision, written from scratch.
 
-**current version: 0.0.3** — Body and System. see [status](#status) for exactly what
+**current version: 0.0.4** — newtonian gravity. see [status](#status) for exactly what
 does and doesn't exist yet.
 
 ---
@@ -16,17 +16,18 @@ this is early. what works today:
 | | |
 |---|---|
 | build system | [x] CMake, three targets, Debug + Release, zero warnings |
-| tests | [x] doctest, 34 cases |
+| tests | [x] doctest, 52 cases |
 | vector maths | [x] Vec3, header-only |
 | bodies | [x] Body, System, barycentre |
-| gravity | [ ] next (0.0.4) |
-| integrators | [ ] 0.3.0 |
+| gravity | [x] brute force O(n^2), softening |
+| integrators | [ ] next (0.0.5), then 0.3.0 |
 | 3D viewer | [ ] 0.2.0 |
 | Barnes-Hut | [ ] 0.4.0 |
 | binary export | [ ] 0.5.0 |
 
-`Vec3`, `Body` and `System` exist and are tested. `orbitalis-cli` and `orbitalis-viewer`
-still just print their version and exit; there is no gravity yet. the full plan is in [ROADMAP.md](ROADMAP.md).
+`Vec3`, `Body`, `System` and a brute-force gravity solver exist and are tested. nothing
+moves yet: `orbitalis-cli` and `orbitalis-viewer` still just print their version and exit,
+because there is no integrator until 0.0.5. the full plan is in [ROADMAP.md](ROADMAP.md).
 
 ## how it's put together
 
