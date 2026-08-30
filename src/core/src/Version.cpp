@@ -9,7 +9,7 @@ const char* version_banner()
 
 const char* milestone_name()
 {
-    return "0.0.4 - newtonian gravity, brute force";
+    return "0.0.5 - the Euler integrators";
 }
 
 }  // namespace orbitalis

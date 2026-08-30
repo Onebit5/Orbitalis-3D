@@ -32,6 +32,7 @@ add_executable(orbitalis-tests
     physics/test_body.cpp
     physics/test_system.cpp
     physics/test_brute_force_solver.cpp
+    integrators/test_euler.cpp
 )
 
 target_link_libraries(orbitalis-tests PRIVATE

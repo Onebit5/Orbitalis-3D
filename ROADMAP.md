@@ -1,6 +1,7 @@
 # roadmap
 
-**where I am: 0.0.4 done.** next up is 0.0.5 (the Euler integrator).
+**where I am: 0.0.5 done.** next up is 0.0.6 (Sun and Earth, the first orbit) — the last
+step before 0.1.0.
 
 a milestone is **done** when the thing it promises actually works and I wrote down how I
 proved it. not when the code compiles.
@@ -32,8 +33,9 @@ the boring foundation. no optimisation, no cleverness, just correct newtonian gr
 - [x] **0.0.4** — `BruteForceSolver`: pairwise newtonian gravity, O(n²), using newton's
   third law so each pair is computed once. plummer softening `r/(r²+ε²)^(3/2)` so nothing
   explodes at close range. ε configurable, and it's a fudge rather than physics
-- [ ] **0.0.5** — fixed-step Euler integrator. it will drift horribly; it's the control
-  group
+- [x] **0.0.5** — Euler integrators. wrote *two*: forward (the control group, spirals out
+  20% per orbit) and semi-implicit (symplectic, stays closed). the second one exists so
+  0.0.6 can tell "the method is bad" apart from "the solver is wrong"
 - [ ] **0.0.6** — hardcoded Sun–Earth scenario. Earth should be roughly back where it
   started after ~365 days
 
