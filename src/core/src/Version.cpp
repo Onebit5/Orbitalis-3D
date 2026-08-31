@@ -9,7 +9,7 @@ const char* version_banner()
 
 const char* milestone_name()
 {
-    return "0.0.6 - Sun and Earth, the first orbit";
+    return "0.1.1 - raylib, and a window";
 }
 
 }  // namespace orbitalis

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(Orbitalis3D
-    VERSION     0.0.6
+    VERSION     0.1.1
     DESCRIPTION "3D newtonian n-body gravitational simulator"
     LANGUAGES   CXX
 )
@@ -79,6 +79,14 @@ include(cmake/OrbitalisWarnings.cmake)
 # machine without a GPU -- which is exactly what milestone 0.4.0 needs. see
 # docs/devlog/0.0.1.md for the longer rant.
 # ------------------------------------------------------------------------------
+# enable_testing() MUST come before any add_subdirectory that registers a test.
+# add_test() in a subdirectory processed earlier is silently ignored: no warning, no
+# error, the test simply never appears in ctest. That is exactly how the viewer's
+# smoke test went missing when it was first added at 0.1.1.
+if(ORBITALIS_BUILD_TESTS)
+    enable_testing()
+endif()
+
 add_subdirectory(src/core)
 
 if(ORBITALIS_BUILD_CLI)
@@ -90,7 +98,6 @@ if(ORBITALIS_BUILD_VIEWER)
 endif()
 
 if(ORBITALIS_BUILD_TESTS)
-    enable_testing()
     add_subdirectory(tests)
 endif()
 

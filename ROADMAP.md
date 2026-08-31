@@ -1,7 +1,7 @@
 # roadmap
 
-**where I am: 0.1.0 SHIPPED.** the core works: Earth orbits the Sun and comes back to
-within 0.0013 AU after one sidereal year. next up is 0.1.1 (raylib, a window).
+**where I am: 0.1.1 done.** raylib is in and a window opens. next up is 0.1.2 (render
+scale layer, camera-relative coordinates).
 
 a milestone is **done** when the thing it promises actually works and I wrote down how I
 proved it. not when the code compiles.
@@ -53,7 +53,9 @@ to machine precision under both. 78 tests, 269 assertions.
 moved ahead of the integrators on purpose. every bug from here on is visible instead of
 hiding in a wall of floats.
 
-- [ ] **0.1.1** — raylib via FetchContent, `orbitalis-viewer` opens a window
+- [x] **0.1.1** — raylib 6.0 via FetchContent, `orbitalis-viewer` opens a window. plus a
+  `--version` path that skips `InitWindow` so CI can smoke-test it, and a configure-time
+  assertion that `orbitalis-core` links no graphics library
 - [ ] **0.1.2** — render scale layer. sim is in metres (~1e11), OpenGL wants ~1–100 in
   float. camera-relative positioning so precision doesn't rot when I zoom in
 - [ ] **0.1.3** — bodies as spheres with exaggerated radii and a minimum on-screen pixel
