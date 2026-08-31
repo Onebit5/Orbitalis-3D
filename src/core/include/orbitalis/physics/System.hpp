@@ -85,6 +85,17 @@ public:
     /// integrator at 0.2.3.
     [[nodiscard]] Vec3 total_momentum() const noexcept;
 
+    /// Subtracts the barycentre velocity from every body, so the system as a whole stops
+    /// drifting. Physics is unchanged: momentum conservation means the drift is constant,
+    /// so removing it is a change of inertial frame and nothing more.
+    ///
+    /// Worth doing to almost any hand-written scenario. Giving a planet its orbital
+    /// velocity while leaving the star at rest leaves the pair carrying net momentum, and
+    /// the whole system then slides across the universe forever.
+    ///
+    /// Only touches velocities. Where the barycentre *sits* is a separate choice.
+    void remove_net_drift() noexcept;
+
     /// Velocity of the barycentre, m/s. Non-zero means the whole system is drifting,
     /// which is usually an artefact of hand-written initial conditions rather than
     /// physics. Subtracting it gives a centre-of-mass frame that keeps everything on

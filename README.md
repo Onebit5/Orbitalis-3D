@@ -4,7 +4,7 @@ a 3D n-body simulator in C++ that computes gravitational trajectories for planet
 systems by numerically solving the equations of motion. newtonian physics, `double`
 precision, written from scratch.
 
-**current version: 0.0.5** — the Euler integrators. see [status](#status) for exactly what
+**current version: 0.1.0** — the physics core, complete. see [status](#status) for exactly what
 does and doesn't exist yet.
 
 ---
@@ -16,19 +16,20 @@ this is early. what works today:
 | | |
 |---|---|
 | build system | [x] CMake, three targets, Debug + Release, zero warnings |
-| tests | [x] doctest, 65 cases |
+| tests | [x] doctest, 78 cases |
 | vector maths | [x] Vec3, header-only |
 | bodies | [x] Body, System, barycentre |
 | gravity | [x] brute force O(n^2), softening |
 | integrators | [x] Euler, forward + semi-implicit |
-| 3D viewer | [ ] 0.2.0 |
+| 3D viewer | [ ] next (0.1.1) |
 | Barnes-Hut | [ ] 0.4.0 |
 | binary export | [ ] 0.5.0 |
 
-the physics core works end to end: `Vec3`, `Body`, `System`, a brute-force gravity solver
-and two Euler integrators, all tested. a circular orbit at 1 AU stays closed under the
-symplectic one. `orbitalis-cli` and `orbitalis-viewer` still only print their version,
-though; the first real scenario lands at 0.0.6. the full plan is in [ROADMAP.md](ROADMAP.md).
+the physics core is complete. `orbitalis-cli` runs a Sun-Earth system for one sidereal
+year and Earth returns to within 0.0013 AU of where it started, on a path 940 million km
+long. the computed orbital period lands within 1.1 seconds of the real sidereal year.
+
+there is no window yet: `orbitalis-viewer` is still a stub until 0.1.1. the full plan is in [ROADMAP.md](ROADMAP.md).
 
 ## how it's put together
 

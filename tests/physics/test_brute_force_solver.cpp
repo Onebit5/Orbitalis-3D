@@ -93,10 +93,10 @@ TEST_CASE("Sun and Earth at one AU produce the textbook accelerations")
     const auto accel = solve(s, BruteForceSolver{});
     REQUIRE(accel.size() == 2);
 
-    // a = G·M / r², worked out separately: 5.9316048893e-03 m/s² on the Earth and
-    // 1.7811038513e-08 m/s² on the Sun.
-    CHECK(accel[1].x == doctest::Approx(-5.9316048893e-03).epsilon(1e-9));
-    CHECK(accel[0].x == doctest::Approx(1.7811038513e-08).epsilon(1e-9));
+    // a = GM / r², worked out separately from the IAU GM values: 5.9300835190e-03 m/s²
+    // on the Earth and 1.7810944552e-08 m/s² on the Sun.
+    CHECK(accel[1].x == doctest::Approx(-5.9300835190e-03).epsilon(1e-9));
+    CHECK(accel[0].x == doctest::Approx(1.7810944552e-08).epsilon(1e-9));
 
     SUBCASE("and they point at each other")
     {
@@ -216,7 +216,7 @@ TEST_CASE("the circular-orbit speed at one AU matches Earth's actual speed")
     // Ties the force law to a number I can look up. For a circular orbit the gravitational
     // acceleration is exactly the centripetal acceleration, a = v²/r, so v = √(a·r).
     //
-    // Earth's mean orbital speed is about 29,780 m/s. Getting ~29,788 out of this is the
+    // Earth's mean orbital speed is about 29,780 m/s. Getting ~29,785 out of this is the
     // right answer: Earth's orbit is mildly elliptical, so its actual speed varies either
     // side of the circular value.
     System s;
@@ -226,7 +226,7 @@ TEST_CASE("the circular-orbit speed at one AU matches Earth's actual speed")
     const auto accel = solve(s, BruteForceSolver{});
     const double v_circular = std::sqrt(accel[1].length() * kAstronomicalUnit);
 
-    CHECK(v_circular == doctest::Approx(29788.5).epsilon(1e-5));
+    CHECK(v_circular == doctest::Approx(29784.69).epsilon(1e-5));
     CHECK(v_circular > 29000.0);
     CHECK(v_circular < 30500.0);
 }
@@ -380,6 +380,6 @@ TEST_CASE("works through the IForceSolver interface")
     std::vector<Vec3> accel(s.size());
     solver.compute_accelerations(s.bodies(), accel);
 
-    CHECK(accel[1].x == doctest::Approx(-5.9316048893e-03).epsilon(1e-9));
+    CHECK(accel[1].x == doctest::Approx(-5.9300835190e-03).epsilon(1e-9));
     CHECK(std::string_view{solver.name()} == "brute-force");
 }

@@ -24,6 +24,18 @@ void System::clear() noexcept
     names_.clear();
 }
 
+void System::remove_net_drift() noexcept
+{
+    if (bodies_.empty()) {
+        return;
+    }
+
+    const Vec3 drift = center_of_mass_velocity();
+    for (Body& b : bodies_) {
+        b.velocity -= drift;
+    }
+}
+
 double System::total_mass() const noexcept
 {
     double total = 0.0;

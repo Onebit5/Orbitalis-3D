@@ -9,7 +9,7 @@ const char* version_banner()
 
 const char* milestone_name()
 {
-    return "0.0.5 - the Euler integrators";
+    return "0.0.6 - Sun and Earth, the first orbit";
 }
 
 }  // namespace orbitalis

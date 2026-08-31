@@ -204,17 +204,17 @@ TEST_CASE("forward Euler spirals a circular orbit outward")
         integrator.step(s, kDay);
     }
 
-    // Computed independently: 1.205649 AU after one orbit at dt = 1 day.
+    // Computed independently: 1.205620 AU after one orbit at dt = 1 day.
     const double radii = orbital_radius(s) / kAstronomicalUnit;
-    CHECK(radii == doctest::Approx(1.205649).epsilon(1e-4));
+    CHECK(radii == doctest::Approx(1.205620).epsilon(1e-4));
 
     SUBCASE("and it keeps going, orbit after orbit")
     {
         for (int i = 0; i < 9 * kStepsPerOrbit; ++i) {
             integrator.step(s, kDay);
         }
-        // 1.895630 AU after ten orbits. Not a wobble, a spiral.
-        CHECK(orbital_radius(s) / kAstronomicalUnit == doctest::Approx(1.895630).epsilon(1e-3));
+        // 1.894430 AU after ten orbits. Not a wobble, a spiral.
+        CHECK(orbital_radius(s) / kAstronomicalUnit == doctest::Approx(1.894430).epsilon(1e-3));
     }
 }
 
@@ -281,8 +281,8 @@ TEST_CASE("semi-implicit Euler's error is bounded, not accumulating")
 
     const auto [lo1, hi1] = radius_bounds(1);
 
-    CHECK(lo1 == doctest::Approx(0.991546).epsilon(1e-4));
-    CHECK(hi1 == doctest::Approx(1.008750).epsilon(1e-4));
+    CHECK(lo1 == doctest::Approx(0.991547).epsilon(1e-4));
+    CHECK(hi1 == doctest::Approx(1.008749).epsilon(1e-4));
 
     SUBCASE("the envelope converges and then stops moving entirely")
     {

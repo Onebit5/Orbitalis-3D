@@ -13,9 +13,9 @@ namespace {
 
 // Real values, because the tests below are more interesting when the numbers mean
 // something. SI units throughout.
-constexpr double kSunMass = 1.98892e30;    // kg
+constexpr double kSunMass = 1.9884098710e30;  // kg, from IAU GM
 constexpr double kSunRadius = 6.957e8;     // m
-constexpr double kEarthMass = 5.9722e24;   // kg
+constexpr double kEarthMass = 5.9721684941e24;  // kg, from IAU GM
 constexpr double kAu = 1.495978707e11;     // m
 
 }  // namespace
@@ -212,7 +212,7 @@ TEST_CASE("the Sun-Earth barycentre lies inside the Sun")
 
     const Vec3 barycentre = s.center_of_mass();
 
-    CHECK(barycentre.x == doctest::Approx(449201.4).epsilon(1e-4));
+    CHECK(barycentre.x == doctest::Approx(449314.3).epsilon(1e-4));
     CHECK(barycentre.y == 0.0);
     CHECK(barycentre.z == 0.0);
 

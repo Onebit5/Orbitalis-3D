@@ -1,15 +1,15 @@
 # roadmap
 
-**where I am: 0.0.5 done.** next up is 0.0.6 (Sun and Earth, the first orbit) — the last
-step before 0.1.0.
+**where I am: 0.1.0 SHIPPED.** the core works: Earth orbits the Sun and comes back to
+within 0.0013 AU after one sidereal year. next up is 0.1.1 (raylib, a window).
 
 a milestone is **done** when the thing it promises actually works and I wrote down how I
 proved it. not when the code compiles.
 
 | milestone | | |
-|---|---|---|
-| 0.1.0 | the core — Vec3, gravity, first orbit | in progress |
-| 0.2.0 | live 3D viewer | |
+| --- | --- | --- |
+| 0.1.0 | the core — Vec3, gravity, first orbit | **done** |
+| 0.2.0 | live 3D viewer | in progress |
 | 0.3.0 | integrators — Verlet, RK4, RKF45 | |
 | 0.4.0 | Barnes-Hut octree + threading | |
 | 0.5.0 | binary trajectory export | |
@@ -36,11 +36,17 @@ the boring foundation. no optimisation, no cleverness, just correct newtonian gr
 - [x] **0.0.5** — Euler integrators. wrote *two*: forward (the control group, spirals out
   20% per orbit) and semi-implicit (symplectic, stays closed). the second one exists so
   0.0.6 can tell "the method is bad" apart from "the solver is wrong"
-- [ ] **0.0.6** — hardcoded Sun–Earth scenario. Earth should be roughly back where it
-  started after ~365 days
+- [x] **0.0.6** — Sun–Earth scenario in the barycentric frame, run by `orbitalis-cli`.
+  found my solar mass was 0.026% high, which cost 68 minutes of year length; `Constants.hpp`
+  now derives mass from IAU GM values and the computed year lands within 1.1 seconds of the
+  real sidereal year
 
 **done when:** Earth goes around the Sun once and doesn't fly off into nowhere. energy
 drift is bad and I know it's bad.
+
+**shipped 2026-08-31.** return distance 0.001319 AU after one sidereal year under
+semi-implicit Euler, against 0.887 AU for forward Euler at identical cost. momentum holds
+to machine precision under both. 78 tests, 269 assertions.
 
 ## 0.2.0 — I can watch it
 
