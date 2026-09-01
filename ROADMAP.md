@@ -1,7 +1,7 @@
 # roadmap
 
-**where I am: 0.1.1 done.** raylib is in and a window opens. next up is 0.1.2 (render
-scale layer, camera-relative coordinates).
+**where I am: 0.1.2 done.** the Sun and Earth are on screen at the right places. next up
+is 0.1.3 (bodies as spheres).
 
 a milestone is **done** when the thing it promises actually works and I wrote down how I
 proved it. not when the code compiles.
@@ -56,8 +56,9 @@ hiding in a wall of floats.
 - [x] **0.1.1** — raylib 6.0 via FetchContent, `orbitalis-viewer` opens a window. plus a
   `--version` path that skips `InitWindow` so CI can smoke-test it, and a configure-time
   assertion that `orbitalis-core` links no graphics library
-- [ ] **0.1.2** — render scale layer. sim is in metres (~1e11), OpenGL wants ~1–100 in
-  float. camera-relative positioning so precision doesn't rot when I zoom in
+- [x] **0.1.2** — render scale layer, in a new `orbitalis-render` library so the view maths
+  is testable without a display. camera-relative conversion; the naive ordering has a hard
+  ~9 km floor you cannot zoom past. `fit_scale` derives the world unit from the data
 - [ ] **0.1.3** — bodies as spheres with exaggerated radii and a minimum on-screen pixel
   size — at true scale Earth is invisible
 - [ ] **0.1.4** — orbit camera: drag to rotate, scroll to zoom, click to follow a body.

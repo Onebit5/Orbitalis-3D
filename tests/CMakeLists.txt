@@ -34,10 +34,12 @@ add_executable(orbitalis-tests
     physics/test_brute_force_solver.cpp
     integrators/test_euler.cpp
     scenarios/test_sun_earth.cpp
+    render/test_render_frame.cpp
 )
 
 target_link_libraries(orbitalis-tests PRIVATE
     orbitalis::core
+    orbitalis::render
     orbitalis::warnings
     doctest::doctest
 )

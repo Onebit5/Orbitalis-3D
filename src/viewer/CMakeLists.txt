@@ -32,6 +32,7 @@ add_executable(orbitalis-viewer src/main.cpp)
 
 target_link_libraries(orbitalis-viewer PRIVATE
     orbitalis::core
+    orbitalis::render
     orbitalis::warnings
     raylib
 )
@@ -71,10 +72,19 @@ endif()
 # by the time the benchmarks fail the change is buried. This makes it a configure
 # error.
 # ------------------------------------------------------------------------------
-get_target_property(_core_links orbitalis-core LINK_LIBRARIES)
-if(_core_links MATCHES "raylib|glfw|opengl|OpenGL|SDL")
-    message(FATAL_ERROR
-        "orbitalis-core links a graphics library (${_core_links}).\n"
-        "core must stay headless: the Barnes-Hut benchmarks at 0.4.0 have to run "
-        "without a display. Link graphics into orbitalis-viewer instead.")
-endif()
+# orbitalis-render is guarded too, as of 0.1.2. It is view-layer code, but the test
+# suite links it and the test suite has to keep running on a machine with no display.
+foreach(_guarded IN ITEMS orbitalis-core orbitalis-render)
+    if(NOT TARGET ${_guarded})
+        continue()
+    endif()
+
+    get_target_property(_links ${_guarded} LINK_LIBRARIES)
+    if(_links MATCHES "raylib|glfw|opengl|OpenGL|SDL")
+        message(FATAL_ERROR
+            "${_guarded} links a graphics library (${_links}).\n"
+            "it must stay headless: the Barnes-Hut benchmarks at 0.4.0 and the whole "
+            "test suite have to run without a display. Link graphics into "
+            "orbitalis-viewer instead.")
+    endif()
+endforeach()

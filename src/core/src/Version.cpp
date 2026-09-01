@@ -9,7 +9,7 @@ const char* version_banner()
 
 const char* milestone_name()
 {
-    return "0.1.1 - raylib, and a window";
+    return "0.1.2 - the render scale layer";
 }
 
 }  // namespace orbitalis

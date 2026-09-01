@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(Orbitalis3D
-    VERSION     0.1.1
+    VERSION     0.1.2
     DESCRIPTION "3D newtonian n-body gravitational simulator"
     LANGUAGES   CXX
 )
@@ -88,6 +88,12 @@ if(ORBITALIS_BUILD_TESTS)
 endif()
 
 add_subdirectory(src/core)
+
+# The view layer's logic, with no graphics dependency. Both the viewer and the test
+# suite link it; see src/render/CMakeLists.txt for why it is split out.
+if(ORBITALIS_BUILD_VIEWER OR ORBITALIS_BUILD_TESTS)
+    add_subdirectory(src/render)
+endif()
 
 if(ORBITALIS_BUILD_CLI)
     add_subdirectory(src/cli)
