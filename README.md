@@ -4,7 +4,7 @@ a 3D n-body simulator in C++ that computes gravitational trajectories for planet
 systems by numerically solving the equations of motion. newtonian physics, `double`
 precision, written from scratch.
 
-**current version: 0.1.2** — the render scale layer. see [status](#status) for exactly what
+**current version: 0.1.3** — bodies on screen. see [status](#status) for exactly what
 does and doesn't exist yet.
 
 ---
@@ -16,12 +16,12 @@ this is early. what works today:
 | | |
 |---|---|
 | build system | [x] CMake, three targets, Debug + Release, zero warnings |
-| tests | [x] doctest, 91 cases |
+| tests | [x] doctest, 105 cases |
 | vector maths | [x] Vec3, header-only |
 | bodies | [x] Body, System, barycentre |
 | gravity | [x] brute force O(n^2), softening |
 | integrators | [x] Euler, forward + semi-implicit |
-| 3D viewer | [~] bodies on screen, no camera controls yet |
+| 3D viewer | [~] bodies as spheres, no camera controls yet |
 | Barnes-Hut | [ ] 0.4.0 |
 | binary export | [ ] 0.5.0 |
 
@@ -29,8 +29,10 @@ the physics core is complete. `orbitalis-cli` runs a Sun-Earth system for one si
 year and Earth returns to within 0.0013 AU of where it started, on a path 940 million km
 long. the computed orbital period lands within 1.1 seconds of the real sidereal year.
 
-`orbitalis-viewer` draws the Sun-Earth system through a camera-relative render frame. the
-camera is fixed and nothing moves yet; controls arrive at 0.1.4 and the sim loop at 0.1.6. the full plan is in [ROADMAP.md](ROADMAP.md).
+`orbitalis-viewer` draws the Sun-Earth system as spheres through a camera-relative render
+frame. radii are compressed by a cube root with a 3-pixel floor, because at true scale Earth
+is 0.0153 pixels across; press T to see that for yourself. the camera is fixed and nothing
+moves yet: controls arrive at 0.1.4 and the sim loop at 0.1.6. the full plan is in [ROADMAP.md](ROADMAP.md).
 
 ## how it's put together
 

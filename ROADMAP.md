@@ -1,7 +1,7 @@
 # roadmap
 
-**where I am: 0.1.2 done.** the Sun and Earth are on screen at the right places. next up
-is 0.1.3 (bodies as spheres).
+**where I am: 0.1.3 done.** bodies are visible spheres with an honest HUD saying how much
+they're exaggerated. next up is 0.1.4 (orbit camera).
 
 a milestone is **done** when the thing it promises actually works and I wrote down how I
 proved it. not when the code compiles.
@@ -59,8 +59,9 @@ hiding in a wall of floats.
 - [x] **0.1.2** — render scale layer, in a new `orbitalis-render` library so the view maths
   is testable without a display. camera-relative conversion; the naive ordering has a hard
   ~9 km floor you cannot zoom past. `fit_scale` derives the world unit from the data
-- [ ] **0.1.3** — bodies as spheres with exaggerated radii and a minimum on-screen pixel
-  size — at true scale Earth is invisible
+- [x] **0.1.3** — bodies as spheres. at true scale Earth is 0.0153 px, so radii go through
+  a cube root (1471:1 becomes 11:1, strictly monotonic) with a 3-pixel floor. T toggles true
+  scale; the HUD reports the exaggeration factor rather than hiding it
 - [ ] **0.1.4** — orbit camera: drag to rotate, scroll to zoom, click to follow a body.
   reference-frame toggle (world / follow-body)
 - [ ] **0.1.5** — trails. ring buffer of past positions per body, drawn as a line strip

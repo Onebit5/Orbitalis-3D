@@ -9,7 +9,7 @@ const char* version_banner()
 
 const char* milestone_name()
 {
-    return "0.1.2 - the render scale layer";
+    return "0.1.3 - bodies as spheres";
 }
 
 }  // namespace orbitalis

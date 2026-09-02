@@ -35,6 +35,7 @@ add_executable(orbitalis-tests
     integrators/test_euler.cpp
     scenarios/test_sun_earth.cpp
     render/test_render_frame.cpp
+    render/test_body_scale.cpp
 )
 
 target_link_libraries(orbitalis-tests PRIVATE

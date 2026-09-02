@@ -19,7 +19,9 @@
 # ------------------------------------------------------------------------------
 add_library(orbitalis-render STATIC
     src/RenderFrame.cpp
+    src/BodyScale.cpp
     include/orbitalis/render/RenderFrame.hpp
+    include/orbitalis/render/BodyScale.hpp
 )
 add_library(orbitalis::render ALIAS orbitalis-render)
 
