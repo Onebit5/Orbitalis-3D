@@ -9,7 +9,7 @@ const char* version_banner()
 
 const char* milestone_name()
 {
-    return "0.1.3 - bodies as spheres";
+    return "0.1.4 - the orbit camera";
 }
 
 }  // namespace orbitalis

@@ -36,6 +36,8 @@ add_executable(orbitalis-tests
     scenarios/test_sun_earth.cpp
     render/test_render_frame.cpp
     render/test_body_scale.cpp
+    render/test_orbit_camera.cpp
+    render/test_picking.cpp
 )
 
 target_link_libraries(orbitalis-tests PRIVATE

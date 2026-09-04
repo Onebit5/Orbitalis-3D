@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(Orbitalis3D
-    VERSION     0.1.3
+    VERSION     0.1.4
     DESCRIPTION "3D newtonian n-body gravitational simulator"
     LANGUAGES   CXX
 )

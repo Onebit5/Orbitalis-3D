@@ -20,8 +20,12 @@
 add_library(orbitalis-render STATIC
     src/RenderFrame.cpp
     src/BodyScale.cpp
+    src/OrbitCamera.cpp
+    src/Picking.cpp
     include/orbitalis/render/RenderFrame.hpp
     include/orbitalis/render/BodyScale.hpp
+    include/orbitalis/render/OrbitCamera.hpp
+    include/orbitalis/render/Picking.hpp
 )
 add_library(orbitalis::render ALIAS orbitalis-render)
 

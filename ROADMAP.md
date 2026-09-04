@@ -1,7 +1,7 @@
 # roadmap
 
-**where I am: 0.1.3 done.** bodies are visible spheres with an honest HUD saying how much
-they're exaggerated. next up is 0.1.4 (orbit camera).
+**where I am: 0.1.4 done.** drag, zoom, click or TAB to follow a body. next up is 0.1.5
+(trails).
 
 a milestone is **done** when the thing it promises actually works and I wrote down how I
 proved it. not when the code compiles.
@@ -62,8 +62,10 @@ hiding in a wall of floats.
 - [x] **0.1.3** — bodies as spheres. at true scale Earth is 0.0153 px, so radii go through
   a cube root (1471:1 becomes 11:1, strictly monotonic) with a 3-pixel floor. T toggles true
   scale; the HUD reports the exaggeration factor rather than hiding it
-- [ ] **0.1.4** — orbit camera: drag to rotate, scroll to zoom, click to follow a body.
-  reference-frame toggle (world / follow-body)
+- [x] **0.1.4** — `OrbitCamera` + ray-sphere picking in `orbitalis-render`. following a body
+  is not a camera feature: it moves `RenderFrame::focus`, which also puts the body where
+  camera-relative precision is best. picking uses the *drawn* radius, so anything visible is
+  clickable
 - [ ] **0.1.5** — trails. ring buffer of past positions per body, drawn as a line strip
 - [ ] **0.1.6** — sim loop decoupled from render loop: fixed dt accumulator,
   steps-per-frame control, pause / step-once / speed. HUD with fps, sim time, dt
