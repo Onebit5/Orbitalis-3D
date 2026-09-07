@@ -1,7 +1,7 @@
 # roadmap
 
-**where I am: 0.1.4 done.** drag, zoom, click or TAB to follow a body. next up is 0.1.5
-(trails).
+**where I am: 0.1.5 done.** Earth traces a closed ellipse on screen. next up is 0.1.6, the
+last step of this milestone.
 
 a milestone is **done** when the thing it promises actually works and I wrote down how I
 proved it. not when the code compiles.
@@ -66,7 +66,9 @@ hiding in a wall of floats.
   is not a camera feature: it moves `RenderFrame::focus`, which also puts the body where
   camera-relative precision is best. picking uses the *drawn* radius, so anything visible is
   clickable
-- [ ] **0.1.5** — trails. ring buffer of past positions per body, drawn as a line strip
+- [x] **0.1.5** — trails. ring buffer per body **in simulation coordinates**, converted at
+  draw time, so switching the followed body reprojects rather than smears. sampled by
+  distance travelled rather than per frame, which gives uniform spacing at any orbital speed
 - [ ] **0.1.6** — sim loop decoupled from render loop: fixed dt accumulator,
   steps-per-frame control, pause / step-once / speed. HUD with fps, sim time, dt
 

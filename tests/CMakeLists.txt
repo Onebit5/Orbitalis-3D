@@ -38,6 +38,7 @@ add_executable(orbitalis-tests
     render/test_body_scale.cpp
     render/test_orbit_camera.cpp
     render/test_picking.cpp
+    render/test_trail.cpp
 )
 
 target_link_libraries(orbitalis-tests PRIVATE
