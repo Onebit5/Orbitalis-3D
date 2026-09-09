@@ -1,5 +1,5 @@
 #include <orbitalis/core/Version.hpp>
-#include <orbitalis/integrators/Euler.hpp>
+#include <orbitalis/integrators/Integrator.hpp>
 #include <orbitalis/physics/BruteForceSolver.hpp>
 #include <orbitalis/physics/Constants.hpp>
 #include <orbitalis/physics/System.hpp>
@@ -18,21 +18,26 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <memory>
 #include <optional>
 #include <string_view>
 #include <vector>
 
-// Milestone 0.1.6: the fixed-timestep simulation loop, and the last step of the viewer
-// milestone.
+// Milestone 0.2.1: the integrator interface.
 //
-// Frame delta-time never reaches the integrator. SimClock turns real elapsed time into a
-// whole number of identical fixed steps and carries the remainder, so the same scenario
-// gives the same answer at 30 fps and at 300.
+// The viewer holds an IIntegrator through a pointer and never learns which concrete method
+// it has. I cycles through them at runtime, which makes the 0.0.5 result something you can
+// watch rather than read: switch to forward Euler and the orbit visibly spirals outward
+// while semi-implicit keeps it closed, at identical cost.
+//
+// Frame delta-time still never reaches the integrator. SimClock turns real elapsed time
+// into a whole number of identical fixed steps, so the same scenario gives the same answer
+// at 30 fps and at 300.
 
 namespace {
 
 using orbitalis::BruteForceSolver;
-using orbitalis::SemiImplicitEuler;
+using orbitalis::IIntegrator;
 using orbitalis::System;
 using orbitalis::Vec3;
 using orbitalis::render::BodyScale;
@@ -173,6 +178,7 @@ struct HudState
     const BodyScale* body_scale;
     const OrbitCamera* camera;
     const SimClock* clock;
+    const IIntegrator* integrator;
     const TrailSet* trails;
     double elapsed;
     std::optional<orbitalis::BodyId> selected;
@@ -184,7 +190,7 @@ void draw_hud(const HudState& hud)
 {
     const System& system = *hud.system;
 
-    const int panel_height = 262 + static_cast<int>(system.size()) * 22;
+    const int panel_height = 286 + static_cast<int>(system.size()) * 22;
     DrawRectangle(0, 0, 600, panel_height, Color{10, 12, 20, 195});
     DrawRectangle(0, GetScreenHeight() - 48, GetScreenWidth(), 48, Color{10, 12, 20, 195});
 
@@ -203,27 +209,32 @@ void draw_hud(const HudState& hud)
                   hud.clock->fell_behind() ? "   (behind)" : "");
     DrawText(line, 24, 124, 18, hud.clock->paused() ? kAccent : kText);
 
+    std::snprintf(line, sizeof(line), "method   %s   order %d   %s",
+                  hud.integrator->name(), hud.integrator->order(),
+                  hud.integrator->is_symplectic() ? "symplectic" : "NOT symplectic");
+    DrawText(line, 24, 148, 18, hud.integrator->is_symplectic() ? kText : kAccent);
+
     std::snprintf(line, sizeof(line), "camera   az %6.1f   el %+6.1f   dist %.4g units",
                   hud.camera->azimuth_degrees(), hud.camera->elevation_degrees(),
                   hud.camera->distance());
-    DrawText(line, 24, 148, 18, kText);
+    DrawText(line, 24, 172, 18, kText);
 
     std::snprintf(line, sizeof(line), "detail   %.4g m per float step at this range",
                   hud.frame->resolution_at(hud.camera->distance()));
-    DrawText(line, 24, 172, 18, kDim);
+    DrawText(line, 24, 196, 18, kDim);
 
     std::snprintf(line, sizeof(line), "view     %s   %s   %s",
                   hud.centre_on_selection ? "centred on selection" : "star-centred",
                   hud.body_scale->true_scale() ? "TRUE SCALE" : "compressed",
                   hud.show_well ? "gravity well on" : "gravity well off");
-    DrawText(line, 24, 196, 18, kDim);
+    DrawText(line, 24, 220, 18, kDim);
 
     std::snprintf(line, sizeof(line), "trails   %zu / %zu points",
                   hud.trails->size() > 1 ? (*hud.trails)[1].size() : 0,
                   hud.trails->capacity_per_body());
-    DrawText(line, 24, 220, 18, kDim);
+    DrawText(line, 24, 244, 18, kDim);
 
-    int y = 258;
+    int y = 282;
     for (orbitalis::BodyId i = 0; i < system.size(); ++i) {
         const std::string_view name = system.name(i);
         std::snprintf(line, sizeof(line), "%s%-6.*s  %.4e m from barycentre",
@@ -233,7 +244,7 @@ void draw_hud(const HudState& hud)
         y += 22;
     }
 
-    DrawText("SPACE pause   . step   +/- speed   drag/scroll camera   click/TAB select   "
+    DrawText("SPACE pause   . step   +/- speed   I integrator   click/TAB select   "
              "F centre   G well   T scale   C clear   ESC",
              24, GetScreenHeight() - 34, 15, kDim);
     DrawFPS(GetScreenWidth() - 96, 24);
@@ -261,7 +272,12 @@ int main(int argc, char** argv)
     PotentialSurface well;
 
     const BruteForceSolver solver;
-    SemiImplicitEuler integrator{solver};
+
+    // Held through the interface, so switching method at runtime is a pointer swap and the
+    // rest of the loop never learns which one it has.
+    std::size_t integrator_index = 1;  // semi-implicit-euler
+    auto integrator = orbitalis::make_integrator(
+        orbitalis::integrator_names()[integrator_index], solver);
 
     const double period =
         orbitalis::scenarios::circular_period(orbitalis::kSunGM + orbitalis::kEarthGM,
@@ -314,7 +330,7 @@ int main(int argc, char** argv)
         trails.resize(system.size());
 
         for (int i = 0; i < steps; ++i) {
-            integrator.step(system, clock.timestep());
+            integrator->step(system, clock.timestep());
             elapsed += clock.timestep();
 
             // Sampled inside the step loop rather than once per frame, so the trail's
@@ -351,6 +367,16 @@ int main(int argc, char** argv)
         }
         if (IsKeyPressed(KEY_TAB)) {
             selected = cycle_selection(selected, system.size());
+        }
+
+        // Swap integrator. The trail is cleared because it is a record of a trajectory this
+        // method did not produce, and leaving it would draw a path that no single
+        // integrator ever took.
+        if (IsKeyPressed(KEY_I)) {
+            integrator_index = (integrator_index + 1) % orbitalis::integrator_names().size();
+            integrator = orbitalis::make_integrator(
+                orbitalis::integrator_names()[integrator_index], solver);
+            trails.clear();
         }
 
         if (const float wheel = GetMouseWheelMove(); wheel != 0.0f) {
@@ -437,9 +463,9 @@ int main(int argc, char** argv)
         }
         EndMode3D();
 
-        HudState hud{&system,   &frame,   &body_scale,         &orbit,     &clock,
-                     &trails,   elapsed,  selected,            centre_on_selection,
-                     show_well};
+        HudState hud{&system, &frame,   &body_scale,         &orbit,    &clock,
+                     integrator.get(),    &trails,             elapsed,   selected,
+                     centre_on_selection, show_well};
         draw_hud(hud);
 
         EndDrawing();

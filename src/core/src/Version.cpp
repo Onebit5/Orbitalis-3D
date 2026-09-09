@@ -9,7 +9,7 @@ const char* version_banner()
 
 const char* milestone_name()
 {
-    return "0.1.6 - the simulation loop";
+    return "0.2.1 - the integrator interface";
 }
 
 }  // namespace orbitalis

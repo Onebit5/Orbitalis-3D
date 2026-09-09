@@ -4,7 +4,7 @@ a 3D n-body simulator in C++ that computes gravitational trajectories for planet
 systems by numerically solving the equations of motion. newtonian physics, `double`
 precision, written from scratch.
 
-**current version: 0.2.0** — the viewer, complete. see [status](#status) for exactly what
+**current version: 0.2.1** — swappable integrators. see [status](#status) for exactly what
 does and doesn't exist yet.
 
 ---
@@ -16,11 +16,11 @@ this is early. what works today:
 | | |
 |---|---|
 | build system | [x] CMake, three targets, Debug + Release, zero warnings |
-| tests | [x] doctest, 177 cases |
+| tests | [x] doctest, 187 cases |
 | vector maths | [x] Vec3, header-only |
 | bodies | [x] Body, System, barycentre |
 | gravity | [x] brute force O(n^2), softening |
-| integrators | [x] Euler; Verlet/RK4/RKF45 next (0.3.0) |
+| integrators | [~] interface + Euler; Verlet/RK4/RKF45 next |
 | 3D viewer | [x] camera, trails, gravity well, fixed-timestep loop |
 | Barnes-Hut | [ ] 0.4.0 |
 | binary export | [ ] 0.5.0 |
@@ -39,7 +39,8 @@ step as you zoom in.
 
 bodies orbit and leave fading trails, over a surface showing the gravitational potential.
 drag to rotate, scroll to zoom, click or TAB to select, SPACE to pause, `.` to single-step,
-`+`/`-` for speed.
+`+`/`-` for speed, `I` to switch integrator and watch a
+non-symplectic method spiral outward.
 
 the simulation runs on a fixed-timestep accumulator, so frame delta-time never reaches the
 integrator: a run at 30 fps and the same run at 300 fps end in bit-identical positions. the full plan is in [ROADMAP.md](ROADMAP.md).

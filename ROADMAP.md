@@ -1,8 +1,7 @@
 # roadmap
 
-**where I am: 0.2.0 SHIPPED.** the viewer works: a flat ecliptic, an interactive camera,
-trails, a gravity well, and a simulation that gives identical results at 30 and 300 fps.
-next up is 0.2.1 (the `IIntegrator` interface).
+**where I am: 0.2.1 done.** integrators are swappable at runtime; press I in the viewer and
+watch forward Euler spiral. next up is 0.2.2 (velocity Verlet).
 
 a milestone is **done** when the thing it promises actually works and I wrote down how I
 proved it. not when the code compiles.
@@ -86,7 +85,9 @@ links no graphics symbols at all.
 
 the actual meat of the numerical-methods part.
 
-- [ ] **0.2.1** — `IIntegrator` interface, swappable at runtime, Euler becomes one impl
+- [x] **0.2.1** — `IIntegrator` with `step` / `name` / `order` / `is_symplectic` / `reset`,
+  plus a name→factory registry. `step` advances *exactly* dt so adaptive methods subdivide
+  internally and `SimClock`'s reproducibility guarantee survives
 - [ ] **0.2.2** — **velocity Verlet**. symplectic, cheap, the workhorse for long runs
 - [ ] **0.2.3** — diagnostics: kinetic + potential energy, linear and angular momentum,
   centre of mass. energy error `|E(t)−E(0)|/|E(0)|` live in the HUD

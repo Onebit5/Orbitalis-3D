@@ -1,5 +1,6 @@
 #pragma once
 
+#include <orbitalis/integrators/Integrator.hpp>
 #include <orbitalis/math/Vec3.hpp>
 #include <orbitalis/physics/ForceSolver.hpp>
 #include <orbitalis/physics/System.hpp>
@@ -45,7 +46,7 @@ namespace orbitalis {
 /// Do not use this for anything you care about. It is here as a baseline, and because
 /// seeing an orbit spiral outward is a much better argument for symplectic integrators
 /// than reading that they are better.
-class ForwardEuler
+class ForwardEuler final : public IIntegrator
 {
 public:
     /// The solver must outlive this integrator. Held by pointer rather than reference so
@@ -53,9 +54,15 @@ public:
     explicit ForwardEuler(const IForceSolver& solver) noexcept : solver_(&solver) {}
 
     /// Advances every body by `dt` seconds.
-    void step(System& system, double dt);
+    void step(System& system, double dt) override;
 
-    [[nodiscard]] const char* name() const noexcept { return "forward-euler"; }
+    [[nodiscard]] const char* name() const noexcept override { return "forward-euler"; }
+
+    /// First order: halving the timestep halves the error.
+    [[nodiscard]] int order() const noexcept override { return 1; }
+
+    /// Emphatically not. This is the method whose energy climbs 15% per orbit.
+    [[nodiscard]] bool is_symplectic() const noexcept override { return false; }
 
 private:
     const IForceSolver* solver_;
@@ -71,22 +78,30 @@ private:
 /// Same cost as forward Euler, dramatically better on orbits. Still only first order, so
 /// velocity Verlet at 0.2.2 will beat it, but it is a genuinely usable method rather than
 /// a cautionary tale.
-class SemiImplicitEuler
+class SemiImplicitEuler final : public IIntegrator
 {
 public:
     explicit SemiImplicitEuler(const IForceSolver& solver) noexcept : solver_(&solver) {}
 
-    void step(System& system, double dt);
+    void step(System& system, double dt) override;
 
-    [[nodiscard]] const char* name() const noexcept { return "semi-implicit-euler"; }
+    [[nodiscard]] const char* name() const noexcept override { return "semi-implicit-euler"; }
+
+    /// Also first order. Same order as forward Euler, wildly different behaviour, which is
+    /// the point: order measures how fast the error shrinks with dt, not whether it
+    /// accumulates.
+    [[nodiscard]] int order() const noexcept override { return 1; }
+
+    /// Yes, and that is the whole difference. Its energy error stays bounded at 0.0296%
+    /// forever where forward Euler's climbs without limit.
+    [[nodiscard]] bool is_symplectic() const noexcept override { return true; }
 
 private:
     const IForceSolver* solver_;
     std::vector<Vec3> accelerations_;
 };
 
-// No IIntegrator base class yet. That arrives at 0.2.1, when there are enough methods for
-// runtime switching to be worth the indirection. Both classes deliberately have the same
-// shape, so extracting the interface later is mechanical rather than a redesign.
+// Both of these carry no state between steps, so neither overrides reset(). Velocity Verlet
+// at 0.2.2 will be the first that does.
 
 }  // namespace orbitalis

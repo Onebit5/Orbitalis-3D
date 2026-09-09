@@ -33,6 +33,7 @@ add_executable(orbitalis-tests
     physics/test_system.cpp
     physics/test_brute_force_solver.cpp
     integrators/test_euler.cpp
+    integrators/test_integrator_interface.cpp
     scenarios/test_sun_earth.cpp
     render/test_render_frame.cpp
     render/test_body_scale.cpp
