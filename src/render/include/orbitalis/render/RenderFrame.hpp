@@ -54,6 +54,26 @@ struct Vec3f
 /// The trade is that precision now degrades with distance *from the camera* rather than
 /// from the origin. That is exactly the right way round, because distant things are small
 /// on screen and their error is subpixel.
+///
+/// # the axis convention
+///
+/// The simulation uses the astronomical convention: the orbital plane is XY and Z is the
+/// orbit normal, the same way ephemerides define the ecliptic. Renderers are Y-up, raylib
+/// included, so handing simulation coordinates straight to the GPU stands the ecliptic on
+/// edge and every orbit appears vertical.
+///
+/// So this conversion also rotates:
+///
+///     render.x =  sim.x
+///     render.y =  sim.z        (orbit normal becomes "up")
+///     render.z = -sim.y
+///
+/// The negation is load-bearing. Swapping two axes without it mirrors the space, which
+/// silently reverses the apparent direction of every orbit: prograde motion would be drawn
+/// retrograde. With it, this is a −90° rotation about X and handedness is preserved.
+///
+/// The rotation lives here rather than in the scenarios because the physics has no
+/// preferred plane and no business knowing which way a graphics API points its Y axis.
 class RenderFrame
 {
 public:

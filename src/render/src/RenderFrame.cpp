@@ -36,9 +36,11 @@ Vec3f RenderFrame::to_render(const Vec3& simulation_position) const noexcept
     const Vec3 relative = simulation_position - focus_;
     const Vec3 scaled = relative / metres_per_unit_;
 
+    // Axis convention change, see the header. Simulation Z (the orbit normal) becomes
+    // render Y (up), and simulation Y becomes render -Z so that handedness survives.
     return Vec3f{static_cast<float>(scaled.x),
-                 static_cast<float>(scaled.y),
-                 static_cast<float>(scaled.z)};
+                 static_cast<float>(scaled.z),
+                 static_cast<float>(-scaled.y)};
 }
 
 Vec3 RenderFrame::to_simulation(const Vec3f& render_position) const noexcept
@@ -46,8 +48,8 @@ Vec3 RenderFrame::to_simulation(const Vec3f& render_position) const noexcept
     // Widening back is lossless, so this recovers whatever survived the trip out. It does
     // not recover what to_render already discarded, and cannot.
     return Vec3{static_cast<double>(render_position.x) * metres_per_unit_ + focus_.x,
-                static_cast<double>(render_position.y) * metres_per_unit_ + focus_.y,
-                static_cast<double>(render_position.z) * metres_per_unit_ + focus_.z};
+                static_cast<double>(-render_position.z) * metres_per_unit_ + focus_.y,
+                static_cast<double>(render_position.y) * metres_per_unit_ + focus_.z};
 }
 
 Vec3f RenderFrame::to_render_naive(const Vec3& simulation_position) const noexcept
@@ -56,12 +58,12 @@ Vec3f RenderFrame::to_render_naive(const Vec3& simulation_position) const noexce
     // by writing the obvious thing, and it is wrong by tens of kilometres at solar-system
     // scale. Kept only so the tests can measure the damage.
     const auto sx = static_cast<float>(simulation_position.x / metres_per_unit_);
-    const auto sy = static_cast<float>(simulation_position.y / metres_per_unit_);
-    const auto sz = static_cast<float>(simulation_position.z / metres_per_unit_);
+    const auto sy = static_cast<float>(simulation_position.z / metres_per_unit_);
+    const auto sz = static_cast<float>(-simulation_position.y / metres_per_unit_);
 
     const auto fx = static_cast<float>(focus_.x / metres_per_unit_);
-    const auto fy = static_cast<float>(focus_.y / metres_per_unit_);
-    const auto fz = static_cast<float>(focus_.z / metres_per_unit_);
+    const auto fy = static_cast<float>(focus_.z / metres_per_unit_);
+    const auto fz = static_cast<float>(-focus_.y / metres_per_unit_);
 
     return Vec3f{sx - fx, sy - fy, sz - fz};
 }

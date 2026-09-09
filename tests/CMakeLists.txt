@@ -39,6 +39,8 @@ add_executable(orbitalis-tests
     render/test_orbit_camera.cpp
     render/test_picking.cpp
     render/test_trail.cpp
+    render/test_sim_clock.cpp
+    physics/test_potential.cpp
 )
 
 target_link_libraries(orbitalis-tests PRIVATE

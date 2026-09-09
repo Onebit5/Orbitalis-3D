@@ -1,7 +1,8 @@
 # roadmap
 
-**where I am: 0.1.5 done.** Earth traces a closed ellipse on screen. next up is 0.1.6, the
-last step of this milestone.
+**where I am: 0.2.0 SHIPPED.** the viewer works: a flat ecliptic, an interactive camera,
+trails, a gravity well, and a simulation that gives identical results at 30 and 300 fps.
+next up is 0.2.1 (the `IIntegrator` interface).
 
 a milestone is **done** when the thing it promises actually works and I wrote down how I
 proved it. not when the code compiles.
@@ -9,8 +10,8 @@ proved it. not when the code compiles.
 | milestone | | |
 | --- | --- | --- |
 | 0.1.0 | the core — Vec3, gravity, first orbit | **done** |
-| 0.2.0 | live 3D viewer | in progress |
-| 0.3.0 | integrators — Verlet, RK4, RKF45 | |
+| 0.2.0 | live 3D viewer | **done** |
+| 0.3.0 | integrators — Verlet, RK4, RKF45 | in progress |
 | 0.4.0 | Barnes-Hut octree + threading | |
 | 0.5.0 | binary trajectory export | |
 | 0.6.0 | orbital elements, scenarios, CLI | |
@@ -69,11 +70,17 @@ hiding in a wall of floats.
 - [x] **0.1.5** — trails. ring buffer per body **in simulation coordinates**, converted at
   draw time, so switching the followed body reprojects rather than smears. sampled by
   distance travelled rather than per frame, which gives uniform spacing at any orbital speed
-- [ ] **0.1.6** — sim loop decoupled from render loop: fixed dt accumulator,
-  steps-per-frame control, pause / step-once / speed. HUD with fps, sim time, dt
+- [x] **0.1.6** — `SimClock`: fixed-dt accumulator, pause, single-step, multiplicative
+  speed, spiral-of-death cap that drops backlog rather than carrying it. frame delta-time
+  never reaches the integrator. also fixed the ecliptic standing on edge (astronomical XY
+  plane vs Y-up renderer) and added a gravitational potential surface
 
 **done when:** I can watch Sun–Earth, spin the camera and speed it up — and the sim gives
 identical results at 30 fps and at 300 fps.
+
+**shipped 2026-09-09.** identical results verified by exact equality of final position, not
+by eye. 177 tests, 732 assertions. all the view logic lives in `orbitalis-render`, which
+links no graphics symbols at all.
 
 ## 0.3.0 — integrators done properly
 

@@ -6,7 +6,9 @@
 #include <orbitalis/render/BodyScale.hpp>
 #include <orbitalis/render/OrbitCamera.hpp>
 #include <orbitalis/render/Picking.hpp>
+#include <orbitalis/render/PotentialSurface.hpp>
 #include <orbitalis/render/RenderFrame.hpp>
+#include <orbitalis/render/SimClock.hpp>
 #include <orbitalis/render/Trail.hpp>
 #include <orbitalis/scenarios/Builtin.hpp>
 
@@ -20,16 +22,12 @@
 #include <string_view>
 #include <vector>
 
-// Milestone 0.1.5: trails.
+// Milestone 0.1.6: the fixed-timestep simulation loop, and the last step of the viewer
+// milestone.
 //
-// Trails are stored in simulation coordinates and converted at draw time, so switching the
-// followed body reprojects the whole history instead of smearing it. See Trail.hpp.
-//
-// The stepping below is PROVISIONAL. It advances a fixed number of steps per frame, which
-// ties the simulation rate to the framerate: the same run gives different answers on a
-// 30 Hz machine and a 144 Hz one. 0.1.6 replaces it with a fixed-timestep accumulator, and
-// frame delta-time must never reach the integrator. It is here only because a trail with
-// nothing moving is not much of a trail.
+// Frame delta-time never reaches the integrator. SimClock turns real elapsed time into a
+// whole number of identical fixed steps and carries the remainder, so the same scenario
+// gives the same answer at 30 fps and at 300.
 
 namespace {
 
@@ -41,7 +39,9 @@ using orbitalis::render::BodyScale;
 using orbitalis::render::cycle_selection;
 using orbitalis::render::OrbitCamera;
 using orbitalis::render::pick_nearest;
+using orbitalis::render::PotentialSurface;
 using orbitalis::render::RenderFrame;
+using orbitalis::render::SimClock;
 using orbitalis::render::TrailSet;
 using orbitalis::render::Vec3f;
 using orbitalis::render::world_radius_for_pixels;
@@ -54,23 +54,14 @@ constexpr double kDragSensitivity = 0.35;
 constexpr double kZoomStep = 0.88;
 constexpr float kClickSlopPixels = 4.0f;
 
-/// About one orbit's worth at the sampling distance below.
-constexpr std::size_t kTrailCapacity = 400;
-
-/// Record a point every this many render units of travel. Distance-based rather than
-/// per-frame, so the spacing is uniform whether the body is at perihelion or aphelion.
-///
-/// Has to sit comfortably ABOVE the distance a body covers in one frame, or the two rates
-/// beat against each other: at 0.04 the Earth was moving 0.037 per frame, so roughly every
-/// other frame failed the test and the spacing alternated instead of being uniform. It was
-/// invisible on screen at 2-4 pixels, and it still made the trail length depend on the
-/// framerate, which is the exact coupling 0.1.6 exists to remove.
-constexpr double kTrailSpacingUnits = 0.1;
+constexpr std::size_t kTrailCapacity = 900;
+constexpr double kTrailSpacingUnits = 0.045;
 
 constexpr Color kBackground{10, 12, 20, 255};
 constexpr Color kText{200, 210, 230, 255};
 constexpr Color kDim{90, 100, 120, 255};
 constexpr Color kAccent{255, 200, 130, 255};
+constexpr Color kWell{58, 74, 112, 255};
 
 Color body_colour(orbitalis::BodyId id)
 {
@@ -128,10 +119,34 @@ std::vector<DrawnBody> lay_out(const System& system,
     return drawn;
 }
 
-/// Draws one trail as a line strip, fading toward the oldest end.
-///
-/// Every point is converted here rather than at record time, which is the whole reason
-/// trails hold metres: the same history draws correctly in any reference frame.
+/// Draws the potential surface as a wireframe, deeper parts brighter.
+void draw_well(const PotentialSurface& surface)
+{
+    const int n = surface.resolution();
+    if (n < 2) {
+        return;
+    }
+
+    auto shade = [&](const Vec3f& a, const Vec3f& b) {
+        // Depth-proportional brightness, so the funnel reads even from directly above where
+        // the geometry alone would be nearly invisible.
+        const double depth = -0.5 * (static_cast<double>(a.y) + b.y) / surface.config().depth_units;
+        const auto alpha = static_cast<unsigned char>(std::clamp(24.0 + 210.0 * depth, 0.0, 255.0));
+        DrawLine3D(to_raylib(a), to_raylib(b), Color{kWell.r, kWell.g, kWell.b, alpha});
+    };
+
+    for (int j = 0; j < n; ++j) {
+        for (int i = 0; i + 1 < n; ++i) {
+            shade(surface.vertex(i, j), surface.vertex(i + 1, j));
+        }
+    }
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j + 1 < n; ++j) {
+            shade(surface.vertex(i, j), surface.vertex(i, j + 1));
+        }
+    }
+}
+
 void draw_trail(const orbitalis::render::Trail& trail, const RenderFrame& frame, Color colour)
 {
     if (trail.size() < 2) {
@@ -143,9 +158,6 @@ void draw_trail(const orbitalis::render::Trail& trail, const RenderFrame& frame,
     for (std::size_t i = 1; i < trail.size(); ++i) {
         const Vector3 current = to_raylib(frame.to_render(trail[i]));
 
-        // Older segments are dimmer, so the direction of travel is readable without an
-        // arrow. Squared so the fade is concentrated at the tail rather than washing out
-        // the whole line.
         const double age = static_cast<double>(i) / static_cast<double>(trail.size() - 1);
         const auto alpha = static_cast<unsigned char>(200.0 * age * age + 10.0);
 
@@ -154,61 +166,76 @@ void draw_trail(const orbitalis::render::Trail& trail, const RenderFrame& frame,
     }
 }
 
-void draw_hud(const System& system,
-              const RenderFrame& frame,
-              const BodyScale& body_scale,
-              const OrbitCamera& camera,
-              const TrailSet& trails,
-              double elapsed_seconds,
-              std::optional<orbitalis::BodyId> followed)
+struct HudState
 {
-    const int panel_height = 238 + static_cast<int>(system.size()) * 22;
-    DrawRectangle(0, 0, 580, panel_height, Color{10, 12, 20, 190});
-    DrawRectangle(0, GetScreenHeight() - 48, GetScreenWidth(), 48, Color{10, 12, 20, 190});
+    const System* system;
+    const RenderFrame* frame;
+    const BodyScale* body_scale;
+    const OrbitCamera* camera;
+    const SimClock* clock;
+    const TrailSet* trails;
+    double elapsed;
+    std::optional<orbitalis::BodyId> selected;
+    bool centre_on_selection;
+    bool show_well;
+};
+
+void draw_hud(const HudState& hud)
+{
+    const System& system = *hud.system;
+
+    const int panel_height = 262 + static_cast<int>(system.size()) * 22;
+    DrawRectangle(0, 0, 600, panel_height, Color{10, 12, 20, 195});
+    DrawRectangle(0, GetScreenHeight() - 48, GetScreenWidth(), 48, Color{10, 12, 20, 195});
 
     DrawText(orbitalis::version_banner(), 24, 24, 28, kText);
     DrawText(orbitalis::milestone_name(), 24, 60, 18, kDim);
 
-    char line[192];
-
-    if (followed) {
-        const std::string_view name = system.name(*followed);
-        std::snprintf(line, sizeof(line), "frame    following %.*s",
-                      static_cast<int>(name.size()), name.data());
-        DrawText(line, 24, 100, 18, kAccent);
-    } else {
-        DrawText("frame    system barycentre", 24, 100, 18, kText);
-    }
+    char line[200];
 
     std::snprintf(line, sizeof(line), "elapsed  %.2f days   (%.3f orbits)",
-                  elapsed_seconds / orbitalis::kDay, elapsed_seconds / orbitalis::kSiderealYear);
-    DrawText(line, 24, 124, 18, kText);
+                  hud.elapsed / orbitalis::kDay, hud.elapsed / orbitalis::kSiderealYear);
+    DrawText(line, 24, 100, 18, kText);
+
+    std::snprintf(line, sizeof(line), "clock    dt %.0f s   x%.4g real-time   %s%s",
+                  hud.clock->timestep(), hud.clock->time_scale(),
+                  hud.clock->paused() ? "PAUSED" : "running",
+                  hud.clock->fell_behind() ? "   (behind)" : "");
+    DrawText(line, 24, 124, 18, hud.clock->paused() ? kAccent : kText);
 
     std::snprintf(line, sizeof(line), "camera   az %6.1f   el %+6.1f   dist %.4g units",
-                  camera.azimuth_degrees(), camera.elevation_degrees(), camera.distance());
+                  hud.camera->azimuth_degrees(), hud.camera->elevation_degrees(),
+                  hud.camera->distance());
     DrawText(line, 24, 148, 18, kText);
 
     std::snprintf(line, sizeof(line), "detail   %.4g m per float step at this range",
-                  frame.resolution_at(camera.distance()));
+                  hud.frame->resolution_at(hud.camera->distance()));
     DrawText(line, 24, 172, 18, kDim);
 
-    std::snprintf(line, sizeof(line), "trails   %zu / %zu points   %s",
-                  trails.size() > 0 ? trails[0].size() : 0, trails.capacity_per_body(),
-                  body_scale.true_scale() ? "TRUE SCALE" : "compressed");
+    std::snprintf(line, sizeof(line), "view     %s   %s   %s",
+                  hud.centre_on_selection ? "centred on selection" : "star-centred",
+                  hud.body_scale->true_scale() ? "TRUE SCALE" : "compressed",
+                  hud.show_well ? "gravity well on" : "gravity well off");
     DrawText(line, 24, 196, 18, kDim);
 
-    int y = 234;
+    std::snprintf(line, sizeof(line), "trails   %zu / %zu points",
+                  hud.trails->size() > 1 ? (*hud.trails)[1].size() : 0,
+                  hud.trails->capacity_per_body());
+    DrawText(line, 24, 220, 18, kDim);
+
+    int y = 258;
     for (orbitalis::BodyId i = 0; i < system.size(); ++i) {
         const std::string_view name = system.name(i);
-        std::snprintf(line, sizeof(line), "%s%-6.*s  %zu trail points",
-                      followed == i ? "> " : "  ", static_cast<int>(name.size()), name.data(),
-                      i < trails.size() ? trails[i].size() : 0);
+        std::snprintf(line, sizeof(line), "%s%-6.*s  %.4e m from barycentre",
+                      hud.selected == i ? "> " : "  ", static_cast<int>(name.size()), name.data(),
+                      system[i].position.length());
         DrawText(line, 24, y, 16, body_colour(i));
         y += 22;
     }
 
-    DrawText("drag rotate   scroll zoom   click/TAB follow   T true scale   C clear trails   ESC close",
-             24, GetScreenHeight() - 34, 16, kDim);
+    DrawText("SPACE pause   . step   +/- speed   drag/scroll camera   click/TAB select   "
+             "F centre   G well   T scale   C clear   ESC",
+             24, GetScreenHeight() - 34, 15, kDim);
     DrawFPS(GetScreenWidth() - 96, 24);
 }
 
@@ -226,13 +253,12 @@ int main(int argc, char** argv)
 
     System system = orbitalis::scenarios::sun_earth();
 
-    // The barycentre of an isolated system does not move, so this stays valid as the bodies
-    // orbit. remove_net_drift() at 0.0.6 is what guarantees that.
     const Vec3 barycentre = system.center_of_mass();
     RenderFrame frame{barycentre, RenderFrame::fit_scale(system.bodies(), barycentre, 6.0)};
 
     BodyScale body_scale;
     TrailSet trails{system.size(), kTrailCapacity};
+    PotentialSurface well;
 
     const BruteForceSolver solver;
     SemiImplicitEuler integrator{solver};
@@ -241,18 +267,22 @@ int main(int argc, char** argv)
         orbitalis::scenarios::circular_period(orbitalis::kSunGM + orbitalis::kEarthGM,
                                               orbitalis::kAstronomicalUnit);
 
-    // PROVISIONAL, see the note at the top of this file. Roughly one orbit every 17 seconds
-    // at 60 fps, and wrong on any other framerate. 0.1.6 fixes that properly.
-    const double dt = period / 2000.0;
-    constexpr int kStepsPerFrame = 2;
+    SimClock::Config clock_config;
+    clock_config.timestep = period / 2000.0;
+    clock_config.time_scale = period / 18.0;  // one orbit per eighteen real seconds
+    SimClock clock{clock_config};
 
     double elapsed = 0.0;
 
-    // Far enough back that the whole fitted system fits vertically. fit_scale targets 6
-    // units of radius, so the orbit is 12 across, and at a 45 degree vertical FOV that needs
-    // 6/tan(22.5) = 14.5 units. Starting at 14 cropped the top of Earth's orbit.
-    OrbitCamera orbit{45.0, 25.0, 18.0};
-    std::optional<orbitalis::BodyId> followed;
+    OrbitCamera orbit{45.0, 28.0, 18.0};
+    std::optional<orbitalis::BodyId> selected;
+
+    // Selection highlights by default and does not move the view: the star stays at the
+    // centre, which is what a planetary system looks like. F opts into re-centring, which
+    // is worth having because putting a body at the render origin is exactly where
+    // camera-relative precision is best (0.1.2).
+    bool centre_on_selection = false;
+    bool show_well = true;
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
     InitWindow(kDefaultWidth, kDefaultHeight, "Orbitalis-3D");
@@ -275,25 +305,52 @@ int main(int argc, char** argv)
 
     while (!WindowShouldClose()) {
         // ---- simulation -------------------------------------------------------------
+        //
+        // GetFrameTime() is the only place real time enters, and it stops here. The
+        // integrator only ever sees clock.timestep().
 
-        for (int i = 0; i < kStepsPerFrame; ++i) {
-            integrator.step(system, dt);
-            elapsed += dt;
-        }
+        const int steps = clock.advance(static_cast<double>(GetFrameTime()));
 
         trails.resize(system.size());
-        trails.sample(system.bodies(), kTrailSpacingUnits * frame.metres_per_unit());
+
+        for (int i = 0; i < steps; ++i) {
+            integrator.step(system, clock.timestep());
+            elapsed += clock.timestep();
+
+            // Sampled inside the step loop rather than once per frame, so the trail's
+            // resolution follows fixed timesteps too. At 0.1.5 it was per frame, which made
+            // trail length quietly depend on the framerate.
+            trails.sample(system.bodies(), kTrailSpacingUnits * frame.metres_per_unit());
+        }
 
         // ---- input ------------------------------------------------------------------
 
+        if (IsKeyPressed(KEY_SPACE)) {
+            clock.set_paused(!clock.paused());
+        }
+        if (IsKeyPressed(KEY_PERIOD)) {
+            clock.request_single_step();
+        }
+        if (IsKeyPressed(KEY_EQUAL) || IsKeyPressed(KEY_KP_ADD)) {
+            clock.scale_speed(2.0);
+        }
+        if (IsKeyPressed(KEY_MINUS) || IsKeyPressed(KEY_KP_SUBTRACT)) {
+            clock.scale_speed(0.5);
+        }
         if (IsKeyPressed(KEY_T)) {
             body_scale.set_true_scale(!body_scale.true_scale());
         }
         if (IsKeyPressed(KEY_C)) {
             trails.clear();
         }
+        if (IsKeyPressed(KEY_G)) {
+            show_well = !show_well;
+        }
+        if (IsKeyPressed(KEY_F)) {
+            centre_on_selection = !centre_on_selection;
+        }
         if (IsKeyPressed(KEY_TAB)) {
-            followed = cycle_selection(followed, system.size());
+            selected = cycle_selection(selected, system.size());
         }
 
         if (const float wheel = GetMouseWheelMove(); wheel != 0.0f) {
@@ -312,16 +369,17 @@ int main(int argc, char** argv)
 
         // ---- frame and camera -------------------------------------------------------
 
-        frame.set_focus(followed ? system[*followed].position : barycentre);
+        const bool following = centre_on_selection && selected.has_value();
+        frame.set_focus(following ? system[*selected].position : barycentre);
 
         {
             OrbitCamera::Limits limits = orbit.limits();
             limits.min_distance =
-                followed ? std::max(1.0e-3,
-                                    body_scale.render_radius(system[*followed].radius,
-                                                             frame.metres_per_unit())
-                                        * 1.5)
-                         : 1.0e-3;
+                following ? std::max(1.0e-3,
+                                     body_scale.render_radius(system[*selected].radius,
+                                                              frame.metres_per_unit())
+                                         * 1.5)
+                          : 1.0e-3;
             limits.max_distance = 200.0;
             orbit.set_limits(limits);
         }
@@ -329,6 +387,10 @@ int main(int argc, char** argv)
         camera.position = to_raylib(orbit.position());
 
         const auto drawn = lay_out(system, frame, body_scale, camera, GetScreenHeight());
+
+        if (show_well) {
+            well.update(system.bodies(), frame);
+        }
 
         if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && drag_travel <= kClickSlopPixels) {
             const Ray ray = GetScreenToWorldRay(press_position, camera);
@@ -342,7 +404,7 @@ int main(int argc, char** argv)
                 radii.push_back(b.radius);
             }
 
-            followed = pick_nearest(to_double(ray.position), to_double(ray.direction), centres,
+            selected = pick_nearest(to_double(ray.position), to_double(ray.direction), centres,
                                     radii);
         }
 
@@ -352,7 +414,10 @@ int main(int argc, char** argv)
         ClearBackground(kBackground);
 
         BeginMode3D(camera);
-        DrawGrid(20, 1.0f);
+
+        if (show_well) {
+            draw_well(well);
+        }
 
         for (std::size_t i = 0; i < trails.size(); ++i) {
             draw_trail(trails[i], frame, body_colour(i));
@@ -365,14 +430,18 @@ int main(int argc, char** argv)
 
             DrawSphereEx(centre, static_cast<float>(drawn[i].radius), 16, 16, body_colour(i));
 
-            if (followed == i) {
-                DrawSphereWires(centre, static_cast<float>(drawn[i].radius * 1.6), 10, 10,
-                                Color{255, 200, 130, 90});
+            if (selected == i) {
+                DrawSphereWires(centre, static_cast<float>(drawn[i].radius * 1.7), 10, 10,
+                                Color{255, 200, 130, 110});
             }
         }
         EndMode3D();
 
-        draw_hud(system, frame, body_scale, orbit, trails, elapsed, followed);
+        HudState hud{&system,   &frame,   &body_scale,         &orbit,     &clock,
+                     &trails,   elapsed,  selected,            centre_on_selection,
+                     show_well};
+        draw_hud(hud);
+
         EndDrawing();
     }
 

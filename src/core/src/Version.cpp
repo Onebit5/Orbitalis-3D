@@ -9,7 +9,7 @@ const char* version_banner()
 
 const char* milestone_name()
 {
-    return "0.1.5 - trails";
+    return "0.1.6 - the simulation loop";
 }
 
 }  // namespace orbitalis

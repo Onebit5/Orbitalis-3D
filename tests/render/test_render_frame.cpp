@@ -14,6 +14,8 @@ using orbitalis::kAstronomicalUnit;
 using orbitalis::System;
 using orbitalis::Vec3;
 using orbitalis::render::RenderFrame;
+using orbitalis::approx_equal;
+using orbitalis::cross;
 using orbitalis::render::Vec3f;
 using orbitalis::scenarios::sun_earth;
 
@@ -288,15 +290,63 @@ TEST_CASE("a bad scale is corrected rather than producing NaN")
     }
 }
 
-TEST_CASE("a default-constructed frame is the identity")
+TEST_CASE("a default-constructed frame scales by one and only rotates")
 {
     const RenderFrame frame;
 
     CHECK(frame.metres_per_unit() == 1.0);
     CHECK(frame.focus() == Vec3{});
 
+    // Not the identity: the axis convention still applies. Simulation Z (the orbit normal)
+    // becomes render Y, and simulation Y becomes render -Z.
     const Vec3f p = frame.to_render(Vec3{1.0, 2.0, 3.0});
     CHECK(p.x == 1.0f);
-    CHECK(p.y == 2.0f);
-    CHECK(p.z == 3.0f);
+    CHECK(p.y == 3.0f);
+    CHECK(p.z == -2.0f);
+}
+
+TEST_CASE("the orbital plane is laid flat, not stood on edge")
+{
+    // The simulation uses the astronomical convention: orbits live in XY with Z as the
+    // orbit normal. Renderers are Y-up. Handing simulation coordinates straight to the GPU
+    // puts the ecliptic vertical, which is what this rotation exists to prevent.
+    const RenderFrame frame{Vec3{}, 1.0};
+
+    SUBCASE("anything in the orbital plane lands at render height zero")
+    {
+        CHECK(frame.to_render(Vec3{5.0, 7.0, 0.0}).y == 0.0f);
+        CHECK(frame.to_render(Vec3{-3.0, 2.0, 0.0}).y == 0.0f);
+    }
+
+    SUBCASE("the orbit normal points up")
+    {
+        const Vec3f up = frame.to_render(Vec3{0.0, 0.0, 1.0});
+        CHECK(up.y == 1.0f);
+        CHECK(up.x == 0.0f);
+        CHECK(up.z == 0.0f);
+    }
+
+    SUBCASE("handedness survives, so prograde motion is not drawn backwards")
+    {
+        // Swapping two axes without the negation would mirror the space and silently
+        // reverse every orbit. Check the basis still satisfies x cross y = z.
+        const Vec3f ex = frame.to_render(Vec3{1.0, 0.0, 0.0});
+        const Vec3f ey = frame.to_render(Vec3{0.0, 1.0, 0.0});
+        const Vec3f ez = frame.to_render(Vec3{0.0, 0.0, 1.0});
+
+        const Vec3 rx{ex.x, ex.y, ex.z};
+        const Vec3 ry{ey.x, ey.y, ey.z};
+        const Vec3 rz{ez.x, ez.y, ez.z};
+
+        CHECK(approx_equal(cross(rx, ry), rz, 1e-9));
+    }
+
+    SUBCASE("and the rotation preserves lengths")
+    {
+        const Vec3f p = frame.to_render(Vec3{3.0, 4.0, 12.0});
+        const double len = std::sqrt(static_cast<double>(p.x) * p.x
+                                     + static_cast<double>(p.y) * p.y
+                                     + static_cast<double>(p.z) * p.z);
+        CHECK(len == doctest::Approx(13.0));
+    }
 }

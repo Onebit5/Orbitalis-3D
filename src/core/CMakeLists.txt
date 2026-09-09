@@ -17,6 +17,7 @@ add_library(orbitalis-core STATIC
     src/BruteForceSolver.cpp
     src/Euler.cpp
     src/Builtin.cpp
+    src/Potential.cpp
     include/orbitalis/math/Vec3.hpp
     include/orbitalis/physics/Body.hpp
     include/orbitalis/physics/System.hpp
@@ -25,6 +26,7 @@ add_library(orbitalis-core STATIC
     include/orbitalis/physics/BruteForceSolver.hpp
     include/orbitalis/integrators/Euler.hpp
     include/orbitalis/scenarios/Builtin.hpp
+    include/orbitalis/physics/Potential.hpp
     "${CMAKE_CURRENT_BINARY_DIR}/generated/orbitalis/core/Version.hpp"
 )
 add_library(orbitalis::core ALIAS orbitalis-core)
