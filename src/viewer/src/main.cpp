@@ -23,12 +23,16 @@
 #include <string_view>
 #include <vector>
 
-// Milestone 0.2.1: the integrator interface.
+// Milestone 0.2.2: velocity Verlet, and it is now the default.
 //
 // The viewer holds an IIntegrator through a pointer and never learns which concrete method
 // it has. I cycles through them at runtime, which makes the 0.0.5 result something you can
 // watch rather than read: switch to forward Euler and the orbit visibly spirals outward
-// while semi-implicit keeps it closed, at identical cost.
+// while the symplectic methods keep it closed, at identical cost.
+//
+// Verlet is second order where both Eulers are first, at the same one force evaluation per
+// step, so it is what a long run should be using. Cycling now walks forward-euler ->
+// semi-implicit-euler -> velocity-verlet, and the HUD reports the order alongside the name.
 //
 // Frame delta-time still never reaches the integrator. SimClock turns real elapsed time
 // into a whole number of identical fixed steps, so the same scenario gives the same answer
@@ -275,9 +279,21 @@ int main(int argc, char** argv)
 
     // Held through the interface, so switching method at runtime is a pointer swap and the
     // rest of the loop never learns which one it has.
-    std::size_t integrator_index = 1;  // semi-implicit-euler
-    auto integrator = orbitalis::make_integrator(
-        orbitalis::integrator_names()[integrator_index], solver);
+    //
+    // Found by name rather than by index. The index was hardcoded until 0.2.2, at which
+    // point inserting velocity Verlet into the registry silently changed which method the
+    // viewer started with, and nothing would have told me.
+    //
+    // The name itself comes from core, so the choice of default sits next to the methods
+    // and is covered by a test, rather than being a string in a viewer that no test links.
+    const auto names = orbitalis::integrator_names();
+    std::size_t integrator_index = static_cast<std::size_t>(
+        std::find(names.begin(), names.end(), orbitalis::kDefaultIntegratorName) -
+        names.begin());
+    if (integrator_index >= names.size()) {
+        integrator_index = 0;  // unreachable: a core test pins that the default resolves
+    }
+    auto integrator = orbitalis::make_integrator(names[integrator_index], solver);
 
     const double period =
         orbitalis::scenarios::circular_period(orbitalis::kSunGM + orbitalis::kEarthGM,
@@ -373,9 +389,8 @@ int main(int argc, char** argv)
         // method did not produce, and leaving it would draw a path that no single
         // integrator ever took.
         if (IsKeyPressed(KEY_I)) {
-            integrator_index = (integrator_index + 1) % orbitalis::integrator_names().size();
-            integrator = orbitalis::make_integrator(
-                orbitalis::integrator_names()[integrator_index], solver);
+            integrator_index = (integrator_index + 1) % names.size();
+            integrator = orbitalis::make_integrator(names[integrator_index], solver);
             trails.clear();
         }
 

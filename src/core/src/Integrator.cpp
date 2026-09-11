@@ -1,8 +1,10 @@
 #include <orbitalis/integrators/Integrator.hpp>
 
 #include <orbitalis/integrators/Euler.hpp>
+#include <orbitalis/integrators/Verlet.hpp>
 
 #include <array>
+#include <cstddef>
 
 namespace orbitalis {
 
@@ -18,7 +20,7 @@ struct Entry
     std::unique_ptr<IIntegrator> (*create)(const IForceSolver&);
 };
 
-constexpr std::array<Entry, 2> kRegistry{{
+constexpr std::array<Entry, 3> kRegistry{{
     {"forward-euler",
      [](const IForceSolver& solver) -> std::unique_ptr<IIntegrator> {
          return std::make_unique<ForwardEuler>(solver);
@@ -27,13 +29,25 @@ constexpr std::array<Entry, 2> kRegistry{{
      [](const IForceSolver& solver) -> std::unique_ptr<IIntegrator> {
          return std::make_unique<SemiImplicitEuler>(solver);
      }},
+    {"velocity-verlet",
+     [](const IForceSolver& solver) -> std::unique_ptr<IIntegrator> {
+         return std::make_unique<VelocityVerlet>(solver);
+     }},
 }};
 
 // Held separately so integrator_names() can hand back a span without building anything.
-constexpr std::array<std::string_view, kRegistry.size()> kNames{
-    kRegistry[0].name,
-    kRegistry[1].name,
-};
+//
+// Derived from kRegistry rather than written out, because listing the names by hand made
+// "adding a method is one row" quietly false: velocity Verlet at 0.2.2 needed two edits,
+// and forgetting the second would have compiled and produced an integrator reachable by
+// make_integrator() but invisible to the viewer's cycle key and to the 0.2.6 harness.
+constexpr auto kNames = [] {
+    std::array<std::string_view, kRegistry.size()> names{};
+    for (std::size_t i = 0; i < kRegistry.size(); ++i) {
+        names[i] = kRegistry[i].name;
+    }
+    return names;
+}();
 
 }  // namespace
 

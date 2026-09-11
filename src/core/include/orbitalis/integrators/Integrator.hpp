@@ -84,6 +84,21 @@ protected:
     IIntegrator& operator=(IIntegrator&&) = default;
 };
 
+/// The method to use when nobody has expressed a preference.
+///
+/// Lives here rather than in the viewer because "which integrator should I use" is a
+/// physics answer, not a UI one, and the same answer is wanted by the scenario loader at
+/// 0.5.3 when a file omits the field. Velocity Verlet because it is second order and
+/// symplectic at one force evaluation per step, which is the right default for a long run
+/// even though RKF45 will beat it over a short arc.
+///
+/// A test asserts this name actually constructs. That check exists because the viewer used
+/// to pick its starting method by index, and a lookup that quietly failed would have fallen
+/// back to whatever sat at index 0, which is forward Euler: the one method in the project
+/// that is deliberately bad. Silently defaulting to the worst option is the sort of failure
+/// that looks like a physics bug for a week.
+inline constexpr std::string_view kDefaultIntegratorName = "velocity-verlet";
+
 /// Every name `make_integrator` understands, in a stable order suitable for cycling through
 /// in a menu.
 ///

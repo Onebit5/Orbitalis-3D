@@ -18,7 +18,6 @@ using orbitalis::integrator_names;
 using orbitalis::kAstronomicalUnit;
 using orbitalis::make_integrator;
 using orbitalis::SemiImplicitEuler;
-using orbitalis::SemiImplicitEuler;
 using orbitalis::System;
 using orbitalis::Vec3;
 using orbitalis::scenarios::sun_earth;
@@ -70,6 +69,27 @@ TEST_CASE("the name list has no duplicates and a stable order")
     // Two calls give the same sequence.
     const auto again = integrator_names();
     CHECK(std::equal(names.begin(), names.end(), again.begin(), again.end()));
+}
+
+TEST_CASE("the default integrator name resolves to a real method")
+{
+    // Guards the one failure this indirection exists to prevent: a default that does not
+    // resolve, where the caller falls back to whatever is first in the registry. First is
+    // forward Euler, the method that is bad on purpose, so a silent fallback would hand the
+    // worst available integrator to anything that did not name one explicitly.
+    const BruteForceSolver solver;
+
+    const auto names = integrator_names();
+    CHECK(std::find(names.begin(), names.end(), orbitalis::kDefaultIntegratorName) !=
+          names.end());
+
+    const auto integrator = make_integrator(orbitalis::kDefaultIntegratorName, solver);
+    REQUIRE(integrator != nullptr);
+
+    // Whatever the default becomes later, it has to be safe for a long unattended run.
+    // RKF45 at 0.2.5 will be more accurate per step and still must not take this slot.
+    CHECK(integrator->is_symplectic());
+    CHECK(integrator->order() >= 2);
 }
 
 TEST_CASE("both Euler variants are reachable by name")

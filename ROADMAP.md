@@ -1,7 +1,9 @@
 # roadmap
 
-**where I am: 0.2.1 done.** integrators are swappable at runtime; press I in the viewer and
-watch forward Euler spiral. next up is 0.2.2 (velocity Verlet).
+**where I am: 0.2.2 done.** velocity Verlet is in and is now the default: second order,
+symplectic, one force evaluation per step. measured convergence 3.9998 against a predicted
+4, and an energy error that is 13,500x tighter than semi-implicit Euler at the same
+timestep. next up is 0.2.3 (energy and momentum diagnostics).
 
 a milestone is **done** when the thing it promises actually works and I wrote down how I
 proved it. not when the code compiles.
@@ -88,7 +90,9 @@ the actual meat of the numerical-methods part.
 - [x] **0.2.1** — `IIntegrator` with `step` / `name` / `order` / `is_symplectic` / `reset`,
   plus a name→factory registry. `step` advances *exactly* dt so adaptive methods subdivide
   internally and `SimClock`'s reproducibility guarantee survives
-- [ ] **0.2.2** — **velocity Verlet**. symplectic, cheap, the workhorse for long runs
+- [x] **0.2.2** — **velocity Verlet**, kick-drift-kick, now the default method. second
+  order, symplectic and time-reversible at one force evaluation per step, by caching the
+  closing acceleration for the next step's opening kick
 - [ ] **0.2.3** — diagnostics: kinetic + potential energy, linear and angular momentum,
   centre of mass. energy error `|E(t)−E(0)|/|E(0)|` live in the HUD
 - [ ] **0.2.4** — classic **RK4**, fixed step. more accurate per step than Verlet but not
