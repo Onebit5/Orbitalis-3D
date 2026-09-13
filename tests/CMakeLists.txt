@@ -43,6 +43,7 @@ add_executable(orbitalis-tests
     render/test_trail.cpp
     render/test_sim_clock.cpp
     physics/test_potential.cpp
+    physics/test_diagnostics.cpp
 )
 
 target_link_libraries(orbitalis-tests PRIVATE

@@ -4,8 +4,8 @@ a 3D n-body simulator in C++ that computes gravitational trajectories for planet
 systems by numerically solving the equations of motion. newtonian physics, `double`
 precision, written from scratch.
 
-**current version: 0.2.2** — velocity Verlet. see [status](#status) for exactly what does
-and doesn't exist yet.
+**current version: 0.2.3** — live conservation diagnostics. see [status](#status) for
+exactly what does and doesn't exist yet.
 
 ---
 
@@ -21,6 +21,7 @@ this is early. what works today:
 | bodies | [x] Body, System, barycentre |
 | gravity | [x] brute force O(n^2), softening |
 | integrators | [~] Euler x2, velocity Verlet; RK4/RKF45 next |
+| diagnostics | [x] energy, linear + angular momentum, live |
 | 3D viewer | [x] camera, trails, gravity well, fixed-timestep loop |
 | Barnes-Hut | [ ] 0.4.0 |
 | binary export | [ ] 0.5.0 |
@@ -41,6 +42,10 @@ bodies orbit and leave fading trails, over a surface showing the gravitational p
 drag to rotate, scroll to zoom, click or TAB to select, SPACE to pause, `.` to single-step,
 `+`/`-` for speed, `I` to cycle integrator and watch a
 non-symplectic method spiral outward. it starts on velocity Verlet.
+
+the HUD reports total energy and how far it has drifted since the run began, plus linear and
+angular momentum. switching to forward Euler turns the drift line orange within a fraction of
+an orbit.
 
 the simulation runs on a fixed-timestep accumulator, so frame delta-time never reaches the
 integrator: a run at 30 fps and the same run at 300 fps end in bit-identical positions. the full plan is in [ROADMAP.md](ROADMAP.md).

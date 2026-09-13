@@ -45,6 +45,31 @@ public:
     virtual void compute_accelerations(std::span<const Body> bodies,
                                        std::span<Vec3> accelerations) const = 0;
 
+    /// Total gravitational potential energy of this configuration, in joules.
+    ///
+    /// **This is on the solver, and not a free function, on purpose.** The potential has to
+    /// be the one whose gradient is the acceleration *this same object* produces. Any other
+    /// potential produces a measured energy drift that is pure bookkeeping: it says nothing
+    /// about the integrator and everything about two formulas disagreeing.
+    ///
+    /// The specific trap is softening. A solver with Plummer ε gives
+    ///
+    ///     a⃗ = G·mⱼ·d⃗ / (|d⃗|² + ε²)^(3/2)
+    ///
+    /// whose potential is −G·mᵢ·mⱼ / √(|d⃗|² + ε²), not the Newtonian −G·mᵢ·mⱼ / |d⃗|.
+    /// Pairing the wrong one would show a drift that changes when ε changes and stays put
+    /// when the integrator changes, which is exactly backwards from what the diagnostics at
+    /// 0.2.3 are for. Asking the solver makes the mismatch impossible rather than merely
+    /// documented, and I have already once failed to act on a note that said "remember to
+    /// match these".
+    ///
+    /// Sign convention: negative for a bound configuration, approaching zero as the bodies
+    /// are separated to infinity. Each unordered pair is counted once.
+    ///
+    /// Cost is O(n²) for a direct solver, the same as one force evaluation, so this is a
+    /// once-per-frame diagnostic rather than a once-per-step one.
+    [[nodiscard]] virtual double potential_energy(std::span<const Body> bodies) const = 0;
+
     /// Short identifier for logs, benchmark tables and the comparison harness at 0.2.6.
     [[nodiscard]] virtual const char* name() const noexcept = 0;
 

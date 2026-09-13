@@ -1,9 +1,9 @@
 # roadmap
 
-**where I am: 0.2.2 done.** velocity Verlet is in and is now the default: second order,
-symplectic, one force evaluation per step. measured convergence 3.9998 against a predicted
-4, and an energy error that is 13,500x tighter than semi-implicit Euler at the same
-timestep. next up is 0.2.3 (energy and momentum diagnostics).
+**where I am: 0.2.3 done.** energy, linear momentum and angular momentum are measured live
+in the HUD, so integrators can be compared by number instead of by eye. the surprise was
+angular momentum: forward Euler loses 55% of it over twenty orbits while its linear momentum
+stays at 3e-15. next up is 0.2.4 (RK4).
 
 a milestone is **done** when the thing it promises actually works and I wrote down how I
 proved it. not when the code compiles.
@@ -93,8 +93,9 @@ the actual meat of the numerical-methods part.
 - [x] **0.2.2** — **velocity Verlet**, kick-drift-kick, now the default method. second
   order, symplectic and time-reversible at one force evaluation per step, by caching the
   closing acceleration for the next step's opening kick
-- [ ] **0.2.3** — diagnostics: kinetic + potential energy, linear and angular momentum,
-  centre of mass. energy error `|E(t)−E(0)|/|E(0)|` live in the HUD
+- [x] **0.2.3** — diagnostics: kinetic + potential energy, linear and angular momentum,
+  centre of mass, live in the HUD. the potential comes from the force solver itself, so it
+  can never disagree with the force being integrated
 - [ ] **0.2.4** — classic **RK4**, fixed step. more accurate per step than Verlet but not
   symplectic, so energy drifts secularly
 - [ ] **0.2.5** — **RKF45** adaptive: embedded 4th/5th order pair, local error estimate,

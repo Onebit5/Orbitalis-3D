@@ -26,6 +26,11 @@ public:
     void compute_accelerations(std::span<const Body> bodies,
                                std::span<Vec3> accelerations) const override;
 
+    /// Exact pairwise potential energy, softened to match the accelerations above.
+    ///
+    ///     U = −G · Σ_{i<j} mᵢ·mⱼ / √(|d⃗|² + ε²)
+    [[nodiscard]] double potential_energy(std::span<const Body> bodies) const override;
+
     [[nodiscard]] const char* name() const noexcept override { return "brute-force"; }
 
     /// The softening length ε, in metres.

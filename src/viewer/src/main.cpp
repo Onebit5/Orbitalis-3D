@@ -1,5 +1,6 @@
 #include <orbitalis/core/Version.hpp>
 #include <orbitalis/integrators/Integrator.hpp>
+#include <orbitalis/physics/Diagnostics.hpp>
 #include <orbitalis/physics/BruteForceSolver.hpp>
 #include <orbitalis/physics/Constants.hpp>
 #include <orbitalis/physics/System.hpp>
@@ -183,6 +184,7 @@ struct HudState
     const OrbitCamera* camera;
     const SimClock* clock;
     const IIntegrator* integrator;
+    const orbitalis::ConservationMonitor* conservation;
     const TrailSet* trails;
     double elapsed;
     std::optional<orbitalis::BodyId> selected;
@@ -194,7 +196,7 @@ void draw_hud(const HudState& hud)
 {
     const System& system = *hud.system;
 
-    const int panel_height = 286 + static_cast<int>(system.size()) * 22;
+    const int panel_height = 358 + static_cast<int>(system.size()) * 22;
     DrawRectangle(0, 0, 600, panel_height, Color{10, 12, 20, 195});
     DrawRectangle(0, GetScreenHeight() - 48, GetScreenWidth(), 48, Color{10, 12, 20, 195});
 
@@ -238,7 +240,44 @@ void draw_hud(const HudState& hud)
                   hud.trails->capacity_per_body());
     DrawText(line, 24, 244, 18, kDim);
 
-    int y = 282;
+    // The point of the whole milestone. Energy drift is signed, because the direction is
+    // the informative part: positive means the method is pumping energy in, which for a
+    // bound orbit means climbing outward. Absolute value would throw that away.
+    const orbitalis::ConservationMonitor& conservation = *hud.conservation;
+    const double drift = conservation.relative_energy_error();
+
+    std::snprintf(line, sizeof(line), "energy   E %+.6e J   T %+.3e   U %+.3e",
+                  conservation.latest().total, conservation.latest().kinetic,
+                  conservation.latest().potential);
+    DrawText(line, 24, 276, 18, kText);
+
+    // Orange once the drift is somewhere a symplectic method at this timestep never goes.
+    // Verlet sits at 2e-8 here and semi-implicit at 3e-4, so 1e-3 flags forward Euler
+    // within a fraction of an orbit and never cries wolf about the other two.
+    std::snprintf(line, sizeof(line), "drift    %+.4e   worst %.4e   (sampled per frame)",
+                  drift, conservation.worst_relative_energy_error());
+    DrawText(line, 24, 300, 18, std::abs(drift) > 1e-3 ? kAccent : kText);
+
+    // Both scaled against the largest single body, since the totals are zero by
+    // construction and an absolute figure at these masses means nothing on its own.
+    //
+    // Drawn as two pieces with independent colours, because these two fail separately and a
+    // single colour would hide that. Linear momentum stays at roundoff under every method
+    // here, since Newton's third law makes it the solver's property. Angular momentum needs
+    // the integrator's update ordering to cooperate as well, and forward Euler's does not:
+    // it has lost 1% of L before it has finished one orbit, while its p is still at 1e-15.
+    // Colouring them together made a perfectly healthy p look guilty by association.
+    const double p_drift = conservation.relative_momentum_drift();
+    const double l_drift = conservation.relative_angular_momentum_drift();
+
+    std::snprintf(line, sizeof(line), "conserved  p %.2e", p_drift);
+    DrawText(line, 24, 324, 18, p_drift > 1e-9 ? kAccent : kDim);
+    const int p_width = MeasureText(line, 18);
+
+    std::snprintf(line, sizeof(line), "   L %.2e   relative", l_drift);
+    DrawText(line, 24 + p_width, 324, 18, l_drift > 1e-9 ? kAccent : kDim);
+
+    int y = 354;
     for (orbitalis::BodyId i = 0; i < system.size(); ++i) {
         const std::string_view name = system.name(i);
         std::snprintf(line, sizeof(line), "%s%-6.*s  %.4e m from barycentre",
@@ -304,6 +343,11 @@ int main(int argc, char** argv)
     clock_config.time_scale = period / 18.0;  // one orbit per eighteen real seconds
     SimClock clock{clock_config};
 
+    // Baselined here, before a single step, so the reference energy is the scenario's own
+    // and not whatever the first frame happened to produce.
+    orbitalis::ConservationMonitor conservation;
+    conservation.reset(system, solver);
+
     double elapsed = 0.0;
 
     OrbitCamera orbit{45.0, 28.0, 18.0};
@@ -344,6 +388,7 @@ int main(int argc, char** argv)
         const int steps = clock.advance(static_cast<double>(GetFrameTime()));
 
         trails.resize(system.size());
+        const bool stepped = steps > 0;
 
         for (int i = 0; i < steps; ++i) {
             integrator->step(system, clock.timestep());
@@ -392,6 +437,12 @@ int main(int argc, char** argv)
             integrator_index = (integrator_index + 1) % names.size();
             integrator = orbitalis::make_integrator(names[integrator_index], solver);
             trails.clear();
+
+            // Re-baseline for the same reason the trail is cleared. The drift on screen has
+            // to be the drift *this* method caused; carrying the old baseline forward would
+            // charge a fresh integrator with the previous one's accumulated error, which is
+            // exactly the comparison the milestone exists to make honest.
+            conservation.reset(system, solver);
         }
 
         if (const float wheel = GetMouseWheelMove(); wheel != 0.0f) {
@@ -478,9 +529,17 @@ int main(int argc, char** argv)
         }
         EndMode3D();
 
+        // Once per frame, not once per step: the potential is O(n²), so sampling every
+        // step would roughly double the cost of the simulation in order to watch it. The
+        // consequence is that "worst" is the worst of what was looked at, which the HUD
+        // says out loud rather than pretending otherwise.
+        if (stepped) {
+            conservation.sample(system, solver);
+        }
+
         HudState hud{&system, &frame,   &body_scale,         &orbit,    &clock,
-                     integrator.get(),    &trails,             elapsed,   selected,
-                     centre_on_selection, show_well};
+                     integrator.get(),    &conservation,       &trails,   elapsed,
+                     selected,            centre_on_selection, show_well};
         draw_hud(hud);
 
         EndDrawing();

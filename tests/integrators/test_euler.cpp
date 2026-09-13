@@ -46,6 +46,17 @@ public:
         std::fill(accelerations.begin(), accelerations.end(), a_);
     }
 
+    /// Potential of a uniform field: U = -Sum m_i * a . r_i, whose negative gradient with
+    /// respect to r_i is m_i * a. Exact, so the energy tests have a closed form here too.
+    [[nodiscard]] double potential_energy(std::span<const Body> bodies) const override
+    {
+        double energy = 0.0;
+        for (const Body& b : bodies) {
+            energy -= b.mass * dot(a_, b.position);
+        }
+        return energy;
+    }
+
     [[nodiscard]] const char* name() const noexcept override { return "constant"; }
 
 private:

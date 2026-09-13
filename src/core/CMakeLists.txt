@@ -19,6 +19,7 @@ add_library(orbitalis-core STATIC
     src/Verlet.cpp
     src/Builtin.cpp
     src/Potential.cpp
+    src/Diagnostics.cpp
     src/Integrator.cpp
     include/orbitalis/math/Vec3.hpp
     include/orbitalis/physics/Body.hpp
@@ -31,6 +32,7 @@ add_library(orbitalis-core STATIC
     include/orbitalis/integrators/Verlet.hpp
     include/orbitalis/scenarios/Builtin.hpp
     include/orbitalis/physics/Potential.hpp
+    include/orbitalis/physics/Diagnostics.hpp
     "${CMAKE_CURRENT_BINARY_DIR}/generated/orbitalis/core/Version.hpp"
 )
 add_library(orbitalis::core ALIAS orbitalis-core)

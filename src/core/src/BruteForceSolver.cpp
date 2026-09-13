@@ -62,4 +62,28 @@ void BruteForceSolver::compute_accelerations(std::span<const Body> bodies,
     }
 }
 
+double BruteForceSolver::potential_energy(std::span<const Body> bodies) const
+{
+    const std::size_t n = bodies.size();
+
+    // Each unordered pair once, same as the force loop. Counting every ordered pair would
+    // double the answer, which is the classic way to get an energy that is exactly 2x wrong
+    // and still looks plausible because it is conserved just as well.
+    double energy = 0.0;
+    for (std::size_t i = 0; i + 1 < n; ++i) {
+        for (std::size_t j = i + 1; j < n; ++j) {
+            const Vec3 d = bodies[j].position - bodies[i].position;
+
+            // The same softened denominator as compute_accelerations, but to the power ½
+            // rather than 3/2. That is not a coincidence: this is the function the force is
+            // the negative gradient of, and differentiating √(d²+ε²) is where the extra
+            // power comes from. A test asserts the two agree by numerical gradient.
+            const double d2 = d.length_squared() + softening_squared_;
+
+            energy -= kGravitationalConstant * bodies[i].mass * bodies[j].mass / std::sqrt(d2);
+        }
+    }
+    return energy;
+}
+
 }  // namespace orbitalis

@@ -9,7 +9,7 @@ const char* version_banner()
 
 const char* milestone_name()
 {
-    return "0.2.2 - velocity Verlet";
+    return "0.2.3 - conservation diagnostics";
 }
 
 }  // namespace orbitalis

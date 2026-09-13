@@ -6,6 +6,7 @@
 #include <orbitalis/math/Vec3.hpp>
 #include <orbitalis/physics/BruteForceSolver.hpp>
 #include <orbitalis/physics/Constants.hpp>
+#include <orbitalis/physics/Diagnostics.hpp>
 #include <orbitalis/physics/System.hpp>
 #include <orbitalis/scenarios/Builtin.hpp>
 
@@ -50,6 +51,11 @@ public:
     {
         ++calls_;
         inner_.compute_accelerations(bodies, accelerations);
+    }
+
+    [[nodiscard]] double potential_energy(std::span<const Body> bodies) const override
+    {
+        return inner_.potential_energy(bodies);
     }
 
     [[nodiscard]] const char* name() const noexcept override { return "counting"; }
@@ -116,29 +122,14 @@ struct CircularOrbit
     return distance(system[1].position, CircularOrbit::true_position(arc));
 }
 
-/// Total mechanical energy, J. Kinetic plus the pairwise Newtonian potential.
+/// Total mechanical energy, J.
 ///
-/// Written out here rather than called from the library because the library does not have
-/// it yet: energy diagnostics are 0.2.3, and this step needs a number to test against
-/// before then. Unsoftened, matching the default solver used throughout this file.
-[[nodiscard]] double total_energy(const System& system)
+/// A thin call into the library now. At 0.2.2 this was written out by hand here because core
+/// did not have it yet; 0.2.3 moved it in, and asking the solver for the potential is what
+/// guarantees it matches the force being integrated.
+[[nodiscard]] double total_energy(const System& system, const IForceSolver& solver)
 {
-    const std::span<const Body> bodies = system.bodies();
-
-    double kinetic = 0.0;
-    for (const Body& b : bodies) {
-        kinetic += 0.5 * b.mass * b.velocity.length_squared();
-    }
-
-    double potential = 0.0;
-    for (std::size_t i = 0; i + 1 < bodies.size(); ++i) {
-        for (std::size_t j = i + 1; j < bodies.size(); ++j) {
-            potential -= kGravitationalConstant * bodies[i].mass * bodies[j].mass /
-                         distance(bodies[i].position, bodies[j].position);
-        }
-    }
-
-    return kinetic + potential;
+    return orbitalis::measure(system, solver).total;
 }
 
 /// How the energy error behaves over a run.
@@ -172,7 +163,7 @@ struct EnergyProfile
         circular_period(orbitalis::kSunGM + orbitalis::kEarthGM, kAstronomicalUnit);
     const double dt = period / per_orbit;
 
-    const double e0 = total_energy(system);
+    const double e0 = total_energy(system, solver);
     const int steps = orbits * per_orbit;
 
     EnergyProfile profile;
@@ -185,7 +176,7 @@ struct EnergyProfile
         // Divided by |E0|, not by E0. A bound orbit has E0 < 0, so dividing by it signed
         // would report an energy *gain* as a decrease, which is how the first version of
         // this got forward Euler exactly backwards.
-        const double signed_error = (total_energy(system) - e0) / std::abs(e0);
+        const double signed_error = (total_energy(system, solver) - e0) / std::abs(e0);
         const double error = std::abs(signed_error);
 
         profile.worst = std::max(profile.worst, error);
